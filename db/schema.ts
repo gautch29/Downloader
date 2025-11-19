@@ -29,5 +29,12 @@ export const sessions = sqliteTable('sessions', {
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`).notNull(),
 });
 
+export const settings = sqliteTable('settings', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    plexUrl: text('plex_url'),
+    plexToken: text('plex_token'),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`).notNull(),
+});
+
 export type Download = typeof downloads.$inferSelect;
 export type NewDownload = typeof downloads.$inferInsert;

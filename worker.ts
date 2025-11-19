@@ -7,6 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import ky from 'ky';
+import { scanPlexLibrary } from './lib/plex';
 
 const DOWNLOAD_DIR = process.env.DOWNLOAD_DIR || './downloads';
 
@@ -153,6 +154,9 @@ async function processQueue() {
                 .where(eq(downloads.id, download.id));
 
             console.log(`Download completed: ${filePath}`);
+
+            // Trigger Plex scan
+            await scanPlexLibrary();
 
         } catch (error: any) {
             console.error(`Download failed for ${download.url}:`, error);

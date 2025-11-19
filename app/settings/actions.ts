@@ -51,3 +51,31 @@ export async function changePasswordAction(formData: FormData) {
     revalidatePath('/');
     return { success: true };
 }
+
+import { updateSettings, getSettings as getSettingsDb } from '@/lib/settings';
+
+export async function updateSettingsAction(formData: FormData) {
+    const plexUrl = formData.get('plexUrl') as string;
+    const plexToken = formData.get('plexToken') as string;
+
+    const userId = await getSession();
+    if (!userId) {
+        return { error: 'Not authenticated' };
+    }
+
+    try {
+        await updateSettings(plexUrl, plexToken);
+        revalidatePath('/settings');
+        return { success: true };
+    } catch (error: any) {
+        return { error: 'Failed to update settings: ' + error.message };
+    }
+}
+
+export async function getSettingsAction() {
+    const userId = await getSession();
+    if (!userId) {
+        return null;
+    }
+    return getSettingsDb();
+}
