@@ -150,7 +150,13 @@ async function processQueue() {
                         console.log(`Permissions fixed for ${targetDir}`);
                     } catch (chmodErr: any) {
                         console.error(`Failed to fix permissions for ${targetDir}:`, chmodErr.message);
-                        throw new Error(`Permission denied: Cannot write to ${targetDir}. Please check folder permissions.`);
+                        console.warn(`Falling back to default download directory: ${DOWNLOAD_DIR}`);
+                        targetDir = DOWNLOAD_DIR;
+
+                        // Ensure default dir exists
+                        if (!fs.existsSync(targetDir)) {
+                            fs.mkdirSync(targetDir, { recursive: true });
+                        }
                     }
                 }
             }
