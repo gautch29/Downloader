@@ -8,9 +8,16 @@ export async function getSession(): Promise<number | null> {
     const cookieStore = await cookies();
     const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-    if (!sessionId) return null;
+    if (!sessionId) {
+        console.log('[getSession] No session cookie found');
+        return null;
+    }
 
-    return validateSession(sessionId);
+    const userId = await validateSession(sessionId);
+    if (!userId) {
+        console.log('[getSession] Session validation failed for ID:', sessionId);
+    }
+    return userId;
 }
 
 export async function setSession(sessionId: string): Promise<void> {

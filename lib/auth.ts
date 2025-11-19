@@ -34,8 +34,13 @@ export async function validateSession(sessionId: string): Promise<number | null>
         where: eq(sessions.id, sessionId),
     });
 
-    if (!session) return null;
+    if (!session) {
+        console.log('[validateSession] Session not found in DB:', sessionId);
+        return null;
+    }
+
     if (session.expiresAt < new Date()) {
+        console.log('[validateSession] Session expired:', session.expiresAt);
         await deleteSession(sessionId);
         return null;
     }
