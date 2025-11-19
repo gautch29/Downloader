@@ -2,10 +2,10 @@ import { getDownloads, addDownload } from './actions';
 import { getPathShortcutsAction } from './paths/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DownloadCard } from '@/components/download-card';
 import { PathShortcutsModal } from '@/components/path-shortcuts-modal';
-import { Plus, Download, Folder } from 'lucide-react';
+import { PathSelector } from '@/components/path-selector';
+import { Plus, Download } from 'lucide-react';
 
 export default async function Home() {
     const downloads = await getDownloads();
@@ -44,32 +44,7 @@ export default async function Home() {
 
                         {/* Path and Filename Selection */}
                         <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
-                                    Download Path
-                                </label>
-                                <Select name="targetPath">
-                                    <SelectTrigger className="bg-black/20 border-white/10">
-                                        <Folder className="h-4 w-4 mr-2 text-zinc-500" />
-                                        <SelectValue placeholder="Select path..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-zinc-900 border-white/10">
-                                        {pathShortcuts.map((shortcut) => (
-                                            <SelectItem key={shortcut.id} value={shortcut.path}>
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{shortcut.name}</span>
-                                                    <span className="text-xs text-zinc-500 font-mono">
-                                                        {shortcut.path || '(Default)'}
-                                                    </span>
-                                                </div>
-                                            </SelectItem>
-                                        ))}
-                                        <SelectItem value="__custom__">
-                                            <span className="text-violet-400">✏️ Custom path...</span>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <PathSelector shortcuts={pathShortcuts} />
                             <div>
                                 <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
                                     Custom Filename (optional)
