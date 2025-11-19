@@ -24,48 +24,39 @@ export class OneFichierClient {
     }
 
     async getDownloadLink(url: string): Promise<string> {
-        // 1fichier API implementation for getting a download link
-        // Based on common 1fichier API patterns. 
-        // Note: The official API docs are behind a login, but generally it involves sending the link and auth.
-        // For premium accounts, we might just need to request the link with the API key.
+        // Clean the URL: remove any affiliate parameters (everything after &)
+        // Keep only the base part: https://1fichier.com/?xyz123
+        const cleanUrl = url.split('&')[0];
+        console.log(`Requesting link for: ${cleanUrl} (Original: ${url})`);
 
-        // This is a simplified implementation assuming a direct download link generation endpoint exists
-        // or using the 'download' endpoint.
+        try {
+            const response = await ky.post('https://api.1fichier.com/v1/download/get_token.cgi', {
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                json: {
+                    url: cleanUrl,
+                }
+            }).json<any>();
 
-    async getDownloadLink(url: string): Promise < string > {
-            // Clean the URL: remove any affiliate parameters (everything after &)
-            // Keep only the base part: https://1fichier.com/?xyz123
-            const cleanUrl = url.split('&')[0];
-            console.log(`Requesting link for: ${cleanUrl} (Original: ${url})`);
+            // Adjust based on actual API response structure
+            if (response.url) {
+                return response.url;
+            } else if (response.link) {
+                return response.link;
+            }
 
-            try {
-                const response = await ky.post('https://api.1fichier.com/v1/download/get_token.cgi', {
-                    headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
-                        'Content-Type': 'application/json',
-                    },
-                    json: {
-                        url: cleanUrl,
-                    }
-                }).json<any>();
-
-                // Adjust based on actual API response structure
-                if(response.url) {
-            return response.url;
-        } else if (response.link) {
-            return response.link;
+            throw new Error('No download link found in response');
+        } catch (error: any) {
+            if (error.name === 'HTTPError') {
+                const errorBody = await error.response.text();
+                console.error('1fichier API Error Response:', errorBody);
+            }
+            console.error('Error getting 1fichier link:', error);
+            throw error;
         }
-
-        throw new Error('No download link found in response');
-    } catch(error: any) {
-        if (error.name === 'HTTPError') {
-            const errorBody = await error.response.text();
-            console.error('1fichier API Error Response:', errorBody);
-        }
-        console.error('Error getting 1fichier link:', error);
-        throw error;
     }
-}
 
     // Alternative method if the above is not the exact endpoint
     // Some implementations use a different endpoint for premium users to "convert" the link
