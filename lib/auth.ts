@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 
 const SALT_ROUNDS = 10;
-const SESSION_DURATION_DAYS = 7;
+const SESSION_DURATION_DAYS = 30;
 
 export async function hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, SALT_ROUNDS);

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Activity, LogOut } from 'lucide-react';
+import { Activity, LogOut, Settings } from 'lucide-react';
 import { logoutAction } from '@/app/login/actions';
 import { getSession } from '@/lib/session';
 import { db } from '@/lib/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { Button } from './ui/button';
+import Link from 'next/link';
 
 export async function Header() {
     // Get current user
@@ -39,6 +40,17 @@ export async function Header() {
                             {username}
                         </span>
                     </div>
+
+                    <Link href="/settings">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-400 hover:text-white hover:bg-white/5"
+                        >
+                            <Settings className="h-4 w-4 mr-2" />
+                            Settings
+                        </Button>
+                    </Link>
 
                     <form action={logoutAction}>
                         <Button

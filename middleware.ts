@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-    const session = request.cookies.get('session');
+    const sessionCookie = request.cookies.get('session');
     const isLoginPage = request.nextUrl.pathname === '/login';
 
-    // If no session and not on login page, redirect to login
-    if (!session && !isLoginPage) {
+    // If no session cookie and not on login page, redirect to login
+    if (!sessionCookie && !isLoginPage) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // If has session and on login page, redirect to home
-    if (session && isLoginPage) {
+    // If has session cookie and on login page, redirect to home
+    if (sessionCookie && isLoginPage) {
         return NextResponse.redirect(new URL('/', request.url));
     }
 

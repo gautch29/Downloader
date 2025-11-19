@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { validateSession } from './auth';
 
 const SESSION_COOKIE_NAME = 'session';
-const COOKIE_MAX_AGE = 7 * 24 * 60 * 60; // 7 days in seconds
+const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
 
 export async function getSession(): Promise<number | null> {
     const cookieStore = await cookies();
