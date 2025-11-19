@@ -30,11 +30,11 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                     <div className="relative z-10 space-y-8">
                         <div className="flex items-center justify-between">
                             <div className="space-y-2">
-                                <h2 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
-                                    <Sparkles className="h-6 w-6 text-violet-400" />
+                                <h2 className="text-3xl font-bold tracking-tight text-zinc-900 flex items-center gap-3">
+                                    <Sparkles className="h-6 w-6 text-violet-600" />
                                     {t('download.title')}
                                 </h2>
-                                <p className="text-zinc-400 text-lg font-light">
+                                <p className="text-zinc-500 text-lg font-light">
                                     {t('download.subtitle')}
                                 </p>
                             </div>
@@ -44,14 +44,14 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                         <form action={addDownload} className="space-y-6">
                             {/* URL Input */}
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-violet-400 transition-colors">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-violet-600 transition-colors">
                                     <Download className="h-5 w-5" />
                                 </div>
                                 <Input
                                     name="url"
                                     placeholder={t('download.placeholder')}
                                     required
-                                    className="pl-12 h-14 text-lg bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-2xl"
+                                    className="pl-12 h-14 text-lg bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-2xl text-zinc-900 placeholder:text-zinc-400"
                                 />
                             </div>
 
@@ -59,13 +59,13 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                             <div className="grid gap-6 md:grid-cols-2">
                                 <PathSelector shortcuts={pathShortcuts} />
                                 <div>
-                                    <label className="text-xs font-medium text-zinc-400 mb-2 block uppercase tracking-wider">
+                                    <label className="text-xs font-medium text-zinc-500 mb-2 block uppercase tracking-wider">
                                         {t('download.custom_filename')}
                                     </label>
                                     <Input
                                         name="customFilename"
                                         placeholder="e.g., my-video.mkv"
-                                        className="h-12 bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-xl"
+                                        className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-xl text-zinc-900 placeholder:text-zinc-400"
                                     />
                                 </div>
                             </div>
@@ -85,10 +85,10 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
             {/* Downloads Grid */}
             <section className="space-y-6 animate-fade-in-up delay-100">
                 <div className="flex items-center justify-between px-2">
-                    <h3 className="text-xl font-semibold text-white tracking-tight">
+                    <h3 className="text-xl font-semibold text-zinc-900 tracking-tight">
                         {t('download.active.title')}
                     </h3>
-                    <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-zinc-400 uppercase tracking-wider">
+                    <span className="px-3 py-1 rounded-full bg-white/50 border border-white/40 text-xs font-medium text-zinc-500 uppercase tracking-wider shadow-sm">
                         {downloads.length} {t('download.active.count')}
                     </span>
                 </div>
@@ -100,12 +100,12 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
 
                     {downloads.length === 0 && (
                         <div className="col-span-full">
-                            <GlassCard className="flex flex-col items-center justify-center py-20 text-center border-dashed border-white/10 bg-white/5">
-                                <div className="mb-6 rounded-full bg-white/5 p-6 ring-1 ring-white/10">
-                                    <Download className="h-10 w-10 text-zinc-600" />
+                            <GlassCard className="flex flex-col items-center justify-center py-20 text-center border-dashed border-zinc-300/50 bg-white/30">
+                                <div className="mb-6 rounded-full bg-white/50 p-6 ring-1 ring-zinc-200 shadow-sm">
+                                    <Download className="h-10 w-10 text-zinc-400" />
                                 </div>
-                                <p className="text-zinc-400 font-medium text-lg">{t('download.empty.title')}</p>
-                                <p className="text-sm text-zinc-600 mt-2">{t('download.empty.subtitle')}</p>
+                                <p className="text-zinc-600 font-medium text-lg">{t('download.empty.title')}</p>
+                                <p className="text-sm text-zinc-500 mt-2">{t('download.empty.subtitle')}</p>
                             </GlassCard>
                         </div>
                     )}

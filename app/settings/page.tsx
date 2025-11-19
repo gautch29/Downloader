@@ -72,14 +72,14 @@ export default function SettingsPage() {
     return (
         <div className="container mx-auto p-6 max-w-2xl animate-fade-in-up">
             <div className="mb-8">
-                <Link href="/" className="inline-flex items-center text-sm font-medium text-zinc-400 hover:text-white transition-colors group">
+                <Link href="/" className="inline-flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors group">
                     <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
                     {t('nav.home')}
                 </Link>
             </div>
 
             <GlassCard className="mb-8">
-                <h1 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center gap-3">
                     <span className="h-8 w-1 rounded-full bg-violet-500"></span>
                     {t('settings.plex.title')}
                 </h1>
@@ -87,7 +87,7 @@ export default function SettingsPage() {
                 <form action={handlePlexSubmit} className="space-y-6">
                     {/* Plex URL */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
                             {t('settings.plex.url')}
                         </label>
                         <Input
@@ -95,14 +95,14 @@ export default function SettingsPage() {
                             placeholder="http://192.168.1.10:32400"
                             defaultValue={plexSettings?.plexUrl}
                             key={plexSettings?.plexUrl}
-                            className="h-12 bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl"
+                            className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl text-zinc-900"
                         />
                         <p className="text-xs text-zinc-500 mt-2">The URL of your Plex Media Server</p>
                     </div>
 
                     {/* Plex Token */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
                             {t('settings.plex.token')}
                         </label>
                         <Input
@@ -111,10 +111,10 @@ export default function SettingsPage() {
                             placeholder="X-Plex-Token"
                             defaultValue={plexSettings?.plexToken}
                             key={plexSettings?.plexToken}
-                            className="h-12 bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl"
+                            className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl text-zinc-900"
                         />
                         <p className="text-xs text-zinc-500 mt-2">
-                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 hover:underline transition-colors">
+                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:text-violet-500 hover:underline transition-colors">
                                 How to find your token
                             </a>
                         </p>
@@ -122,13 +122,13 @@ export default function SettingsPage() {
 
                     {/* Messages */}
                     {plexError && (
-                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center gap-2">
+                        <div className="p-4 rounded-xl bg-red-50/50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
                             {plexError}
                         </div>
                     )}
                     {plexSuccess && (
-                        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm flex items-center gap-2">
+                        <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 text-emerald-600 text-sm flex items-center gap-2">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                             {t('settings.success')}
                         </div>
@@ -145,7 +145,7 @@ export default function SettingsPage() {
             </GlassCard>
 
             <GlassCard>
-                <h1 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+                <h1 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center gap-3">
                     <span className="h-8 w-1 rounded-full bg-fuchsia-500"></span>
                     {t('settings.password.title')}
                 </h1>
@@ -153,51 +153,51 @@ export default function SettingsPage() {
                 <form id="password-form" action={handleSubmit} className="space-y-6">
                     {/* Current Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
                             {t('settings.password.current')}
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                             <Input
                                 name="currentPassword"
                                 type="password"
                                 required
                                 autoComplete="current-password"
-                                className="pl-11 h-12 bg-black/20 border-white/10 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl"
+                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
                             />
                         </div>
                     </div>
 
                     {/* New Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
                             {t('settings.password.new')}
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                             <Input
                                 name="newPassword"
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-black/20 border-white/10 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl"
+                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
                             />
                         </div>
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-300 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
                             {t('settings.password.confirm')}
                         </label>
                         <div className="relative">
-                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                             <Input
                                 name="confirmPassword"
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-black/20 border-white/10 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl"
+                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
                             />
                         </div>
                     </div>

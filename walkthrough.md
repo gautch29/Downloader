@@ -1,32 +1,34 @@
-# Verification Walkthrough: Visual Refinement & Localization
+# Verification Walkthrough: "Joyful Glass" Redesign & Localization
 
-## 1. "Apple-like" Glass Aesthetic
-- **Objective**: Verify the enhanced glassmorphism effect.
+## 1. "Joyful Glass" Aesthetic (Light Mode)
+- **Objective**: Verify the new light, Apple-inspired aesthetic.
 - **Steps**:
     1.  Navigate to the home page (`/`).
-    2.  **Blur & Saturation**: Observe the glass cards. They should have a stronger blur (`backdrop-filter: blur(40px)`) and increased saturation (`saturate(180%)`), making the background colors pop through more vividly.
-    3.  **Borders**: Check for a subtle, translucent white border (`border-white/20`) that defines the edges cleanly.
-    4.  **Shadows**: Verify that shadows are softer and more diffuse, lifting the elements off the background.
+    2.  **Background**: Confirm the background is **white** with subtle, moving pastel blobs (violet, blue, pink). It should feel bright and airy, not dark.
+    3.  **Glass Cards**: Verify cards are white/translucent (`bg-white/70`) with a strong blur, creating a "frosted glass" look over the moving background.
+    4.  **Text Contrast**: Ensure all text is dark (`text-zinc-900` or `text-zinc-500`) and easily readable against the light glass. No white text on white backgrounds.
+    5.  **Inputs**: Check that input fields are light (`bg-white/50`) with dark text.
 
 ## 2. Complete Localization
 - **Objective**: Verify that ALL text is translated when switching languages.
 - **Steps**:
     1.  Toggle language to **French (FR)**.
-    2.  **Home Page**:
+    2.  **Header**:
+        -   Hover over Settings icon -> "Paramètres" (tooltip/title)
+        -   Hover over Logout icon -> "Déconnexion" (tooltip/title)
+    3.  **Home Page**:
         -   "Active Downloads" -> "Téléchargements actifs"
         -   "No downloads yet" -> "Aucun téléchargement"
-        -   "Custom Filename (optional)" -> "Nom de fichier personnalisé (optionnel)"
-        -   "Paste your 1fichier premium link..." -> "Collez votre lien premium 1fichier..."
-    3.  **Download Cards** (if any active):
-        -   Status badges: "Downloading" -> "Téléchargement", "Completed" -> "Terminé", etc.
-        -   Cancel button confirmation: "Êtes-vous sûr de vouloir annuler ce téléchargement ?"
-    4.  **Path Shortcuts Modal** (Click "Manage Paths" / "Gérer les chemins"):
+    4.  **Settings Page**:
+        -   Labels: "URL Serveur Plex", "Jeton Plex"
+        -   Buttons: "Enregistrer Plex", "Mettre à jour"
+    5.  **Path Shortcuts Modal**:
         -   Title: "Gérer les raccourcis"
-        -   Button: "Ajouter un raccourci"
         -   Labels: "Nom", "Chemin"
 
-## 3. Mobile Responsiveness (Regression Check)
-- **Objective**: Ensure the visual changes didn't break mobile layout.
+## 3. Mobile Responsiveness
+- **Objective**: Ensure the light theme looks good on mobile.
 - **Steps**:
     1.  Resize to mobile width.
-    2.  Verify that the new glass effects still look good and don't cause overflow or readability issues.
+    2.  Verify that the pastel background blobs are visible but not overwhelming.
+    3.  Check that the glass cards have appropriate padding and margins.

@@ -26,7 +26,7 @@ export function HeaderClient({ username }: HeaderClientProps) {
                         </div>
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-white">dl.flgr.fr</h1>
+                        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">dl.flgr.fr</h1>
                         <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">{t('download.title')}</p>
                     </div>
                 </div>
@@ -34,11 +34,11 @@ export function HeaderClient({ username }: HeaderClientProps) {
                 <div className="flex items-center gap-6">
                     <LanguageToggle />
 
-                    <div className="h-8 w-px bg-white/10" />
+                    <div className="h-8 w-px bg-zinc-200" />
 
-                    <div className="flex items-center gap-3 bg-white/5 rounded-full px-4 py-1.5 border border-white/5">
-                        <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-400" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-emerald-400">
+                    <div className="flex items-center gap-3 bg-white/50 rounded-full px-4 py-1.5 border border-white/40 shadow-sm">
+                        <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-emerald-600">
                             {username}
                         </span>
                     </div>
@@ -48,7 +48,8 @@ export function HeaderClient({ username }: HeaderClientProps) {
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="glass-button text-zinc-400 hover:text-white rounded-full h-10 w-10 p-0"
+                                className="glass-button text-zinc-600 hover:text-zinc-900 rounded-full h-10 w-10 p-0"
+                                title={t('nav.settings')}
                             >
                                 <Settings className="h-4 w-4" />
                             </Button>
@@ -59,7 +60,8 @@ export function HeaderClient({ username }: HeaderClientProps) {
                                 type="submit"
                                 variant="ghost"
                                 size="sm"
-                                className="glass-button text-zinc-400 hover:text-red-400 rounded-full h-10 w-10 p-0"
+                                className="glass-button text-zinc-600 hover:text-red-500 rounded-full h-10 w-10 p-0"
+                                title={t('nav.logout')}
                             >
                                 <LogOut className="h-4 w-4" />
                             </Button>
