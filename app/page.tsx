@@ -11,18 +11,19 @@ export default async function Home() {
         <div className="container mx-auto p-6 max-w-5xl space-y-8">
             {/* Hero / Add Section */}
             <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm animate-fade-in-up">
-                <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                <div className="relative z-10 space-y-6">
                     <div className="space-y-2">
                         <h2 className="text-2xl font-bold tracking-tight text-white">
                             Start New Download
                         </h2>
                         <p className="text-zinc-400">
-                            Paste your 1fichier premium link below to begin.
+                            Paste your 1fichier premium link and customize the download location.
                         </p>
                     </div>
 
-                    <form action={addDownload} className="flex w-full max-w-md items-center gap-2">
-                        <div className="relative flex-1">
+                    <form action={addDownload} className="space-y-4">
+                        {/* URL Input */}
+                        <div className="relative">
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500">
                                 <Download className="h-4 w-4" />
                             </div>
@@ -33,12 +34,37 @@ export default async function Home() {
                                 className="pl-9 bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all"
                             />
                         </div>
+
+                        {/* Custom Filename and Directory */}
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
+                                    Custom Filename (optional)
+                                </label>
+                                <Input
+                                    name="customFilename"
+                                    placeholder="e.g., my-video.mkv"
+                                    className="bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
+                                    Subdirectory (optional)
+                                </label>
+                                <Input
+                                    name="customDirectory"
+                                    placeholder="e.g., Movies/Action"
+                                    className="bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all"
+                                />
+                            </div>
+                        </div>
+
                         <Button
                             type="submit"
-                            className="bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all hover:scale-105 active:scale-95"
+                            className="w-full bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-500/20 transition-all hover:scale-[1.02] active:scale-95"
                         >
                             <Plus className="mr-2 h-4 w-4" />
-                            Add
+                            Add Download
                         </Button>
                     </form>
                 </div>

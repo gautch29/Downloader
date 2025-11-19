@@ -7,6 +7,8 @@ interface DownloadCardProps {
         id: number;
         url: string;
         filename: string | null;
+        customFilename: string | null;
+        customDirectory: string | null;
         status: string;
         progress: number | null;
         size: number | null;
@@ -34,7 +36,10 @@ export function DownloadCard({ download }: DownloadCardProps) {
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium text-zinc-100 truncate">
-                            {download.filename || 'Unknown Filename'}
+                            {download.customDirectory && (
+                                <span className="text-zinc-500 font-normal">{download.customDirectory}/</span>
+                            )}
+                            {download.customFilename || download.filename || 'Unknown Filename'}
                         </h3>
                         <Badge
                             variant="outline"

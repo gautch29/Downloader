@@ -47,8 +47,28 @@ async function processQueue() {
 
             if (!response.body) throw new Error('No response body');
 
-            const filename = download.filename || path.basename(new URL(directLink).pathname) || `file-${download.id}`;
-            const filePath = path.join(DOWNLOAD_DIR, filename);
+            // Sanitize and determine filename
+            let filename = download.customFilename || download.filename || path.basename(new URL(directLink).pathname) || `file-${download.id}`;
+            // Remove any path separators from filename for security
+            filename = path.basename(filename);
+
+            // Sanitize and create directory path
+            let targetDir = DOWNLOAD_DIR;
+            if (download.customDirectory) {
+                // Sanitize: remove leading/trailing slashes, prevent directory traversal
+                const sanitizedDir = download.customDirectory
+                    .replace(/^[\/\\]+|[\/\\]+$/g, '') // Remove leading/trailing slashes
+                    .replace(/\.\./g, '') // Remove .. (directory traversal)
+                    .replace(/[<>:"|?*]/g, ''); // Remove invalid characters
+
+                if (sanitizedDir) {
+                    targetDir = path.join(DOWNLOAD_DIR, sanitizedDir);
+                    // Ensure the directory exists
+                    fs.mkdirSync(targetDir, { recursive: true });
+                }
+            }
+
+            const filePath = path.join(targetDir, filename);
             const fileStream = fs.createWriteStream(filePath);
 
             // @ts-ignore - ky response body is compatible
@@ -63,7 +83,7 @@ async function processQueue() {
                 })
                 .where(eq(downloads.id, download.id));
 
-            console.log(`Download completed: ${filename}`);
+            console.log(`Download completed: ${filePath}`);
 
         } catch (error: any) {
             console.error(`Download failed for ${download.url}:`, error);
