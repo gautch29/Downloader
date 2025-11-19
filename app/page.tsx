@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { DownloadCard } from '@/components/download-card';
 import { PathShortcutsModal } from '@/components/path-shortcuts-modal';
 import { PathSelector } from '@/components/path-selector';
+import { AutoRefresh } from '@/components/auto-refresh';
 import { Plus, Download } from 'lucide-react';
 
 export default async function Home() {
@@ -13,6 +14,7 @@ export default async function Home() {
 
     return (
         <div className="container mx-auto p-6 max-w-5xl space-y-8">
+            <AutoRefresh />
             {/* Hero / Add Section */}
             <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm animate-fade-in-up">
                 <div className="relative z-10 space-y-6">
