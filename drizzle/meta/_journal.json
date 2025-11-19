@@ -15,6 +15,13 @@
       "when": 1763584762416,
       "tag": "0001_outgoing_speedball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1763587767884,
+      "tag": "0002_romantic_exiles",
+      "breakpoints": true
     }
   ]
 }
