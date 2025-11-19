@@ -15,7 +15,8 @@ module.exports = {
             args: "tsx worker.ts",
             env: {
                 NODE_ENV: "production"
-            }
+            },
+            env_file: ".env"
         }
     ]
 };
