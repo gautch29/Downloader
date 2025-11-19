@@ -85,24 +85,42 @@ async function processQueue() {
             let filename = download.customFilename;
 
             if (!filename) {
-                // Try to get filename from Content-Disposition header
-                const contentDisposition = response.headers.get('content-disposition');
-                if (contentDisposition) {
-                    // Parse: Content-Disposition: attachment; filename="example.zip"
-                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                    if (filenameMatch && filenameMatch[1]) {
-                        filename = filenameMatch[1].replace(/['"]/g, '');
-                    }
-                }
+                // Priority 1: Filename from 1fichier API (stored in database)
+                // Priority 2: Content-Disposition header
+                // Priority 3: URL path
+                // Priority 4: Generated name
 
-                // Fallback to database filename, URL path, or generated name
-                if (!filename) {
-                    filename = download.filename || path.basename(new URL(directLink).pathname) || `file-${download.id}`;
+                if (download.filename) {
+                    filename = download.filename;
+                } else {
+                    // Try to get filename from Content-Disposition header
+                    const contentDisposition = response.headers.get('content-disposition');
+                    if (contentDisposition) {
+                        // Parse: Content-Disposition: attachment; filename="example.zip"
+                        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1].replace(/['"]/g, '');
+                        }
+                    }
+
+                    // Fallback to URL path or generated name
+                    if (!filename) {
+                        filename = path.basename(new URL(directLink).pathname) || `file-${download.id}`;
+                    }
                 }
             }
 
             // Remove any path separators from filename for security
             filename = path.basename(filename);
+
+            // Update filename in database immediately so UI can show it
+            try {
+                await db.update(downloads)
+                    .set({ filename: filename })
+                    .where(eq(downloads.id, download.id));
+            } catch (dbError) {
+                console.error(`Failed to update filename in DB:`, dbError);
+            }
 
             // Determine target directory
             let targetDir = DOWNLOAD_DIR;
