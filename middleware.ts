@@ -5,6 +5,9 @@ export function middleware(request: NextRequest) {
     const sessionCookie = request.cookies.get('session');
     const isLoginPage = request.nextUrl.pathname === '/login';
 
+    console.log(`[Middleware] Path: ${request.nextUrl.pathname}, Session: ${sessionCookie ? 'Present' : 'Missing'}`);
+
+
     // If no session cookie and not on login page, redirect to login
     if (!sessionCookie && !isLoginPage) {
         return NextResponse.redirect(new URL('/login', request.url));

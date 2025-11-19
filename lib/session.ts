@@ -17,7 +17,7 @@ export async function setSession(sessionId: string): Promise<void> {
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE_NAME, sessionId, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Allow non-HTTPS for local network access
         sameSite: 'lax',
         maxAge: COOKIE_MAX_AGE,
         path: '/',
