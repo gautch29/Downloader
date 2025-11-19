@@ -41,6 +41,46 @@
 
     --radius: 1rem;
   }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      /* Apple Dark Mode Colors */
+      --background: 240 6% 10%;
+      /* #1D1D1F - Apple's near-black */
+      --foreground: 0 0% 98%;
+      /* #FAFAFA */
+
+      --card: 240 6% 10%;
+      --card-foreground: 0 0% 98%;
+
+      --popover: 240 6% 10%;
+      --popover-foreground: 0 0% 98%;
+
+      --primary: 211 100% 50%;
+      /* #0A84FF - Apple Dark Mode Blue */
+      --primary-foreground: 0 0% 100%;
+
+      --secondary: 240 4% 16%;
+      /* #2C2C2E - Dark grey for secondary backgrounds */
+      --secondary-foreground: 0 0% 98%;
+
+      --muted: 240 4% 16%;
+      --muted-foreground: 240 5% 65%;
+      /* #86868B - Apple's secondary text (Dark) */
+
+      --accent: 211 100% 50%;
+      --accent-foreground: 0 0% 100%;
+
+      --destructive: 0 84% 60%;
+      /* #FF453A - Apple Dark Mode Red */
+      --destructive-foreground: 0 0% 100%;
+
+      --border: 240 4% 26%;
+      /* #38383A */
+      --input: 240 4% 16%;
+      --ring: 211 100% 50%;
+    }
+  }
 }
 
 @layer base {
@@ -49,7 +89,7 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   }
 }
@@ -58,34 +98,34 @@
 
   /* Apple-style Glass - Clean, subtle, refined */
   .glass {
-    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-sm;
+    @apply bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-sm dark:shadow-none;
   }
 
   .glass-card {
-    @apply bg-white/70 backdrop-blur-2xl border border-white/40 rounded-3xl transition-all duration-300;
+    @apply bg-white/70 dark:bg-zinc-800/60 backdrop-blur-2xl border border-white/40 dark:border-white/10 rounded-3xl transition-all duration-300;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
   }
 
   .glass-card:hover {
-    @apply transform scale-[1.005];
+    @apply transform scale-[1.005] dark:bg-zinc-800/80;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
   }
 
   .glass-button {
-    @apply bg-white/90 backdrop-blur-md border border-zinc-200 shadow-sm hover:bg-white hover:shadow-md transition-all active:scale-95;
+    @apply bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md border border-zinc-200 dark:border-zinc-700 shadow-sm hover:bg-white dark:hover:bg-zinc-700 hover:shadow-md transition-all active:scale-95 text-zinc-900 dark:text-white;
   }
 
   /* Apple Blue Button */
   .apple-button {
-    @apply bg-[#0071E3] text-white font-medium rounded-full hover:bg-[#0077ED] active:scale-95 transition-all shadow-sm hover:shadow-md;
+    @apply bg-[#0071E3] dark:bg-[#0A84FF] text-white font-medium rounded-full hover:bg-[#0077ED] dark:hover:bg-[#0071E3] active:scale-95 transition-all shadow-sm hover:shadow-md;
   }
 
   .text-apple-grey {
-    @apply text-[#86868B];
+    @apply text-[#86868B] dark:text-[#98989D];
   }
 
   .bg-apple-grey {
-    @apply bg-[#F5F5F7];
+    @apply bg-[#F5F5F7] dark:bg-[#1C1C1E];
   }
 
   .animate-fade-in-up {

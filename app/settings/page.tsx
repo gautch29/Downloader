@@ -72,37 +72,37 @@ export default function SettingsPage() {
     return (
         <div className="container mx-auto p-6 max-w-2xl animate-fade-in-up">
             <div className="mb-8">
-                <Link href="/" className="inline-flex items-center text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors group">
-                    <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    {t('nav.home')}
+                <Link href="/" className="inline-flex items-center text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    {t('nav.back')}
                 </Link>
             </div>
 
             <GlassCard className="mb-8">
-                <h1 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center gap-3">
-                    <span className="h-8 w-1 rounded-full bg-violet-500"></span>
+                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
+                    <span className="h-8 w-1 rounded-full bg-[#0071E3] dark:bg-[#0A84FF]"></span>
                     {t('settings.plex.title')}
                 </h1>
 
                 <form action={handlePlexSubmit} className="space-y-6">
                     {/* Plex URL */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
                             {t('settings.plex.url')}
                         </label>
                         <Input
                             name="plexUrl"
-                            placeholder="http://192.168.1.10:32400"
+                            placeholder="http://localhost:32400"
                             defaultValue={plexSettings?.plexUrl}
                             key={plexSettings?.plexUrl}
-                            className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl text-zinc-900"
+                            className="h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                         />
                         <p className="text-xs text-zinc-500 mt-2">The URL of your Plex Media Server</p>
                     </div>
 
                     {/* Plex Token */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
                             {t('settings.plex.token')}
                         </label>
                         <Input
@@ -111,10 +111,10 @@ export default function SettingsPage() {
                             placeholder="X-Plex-Token"
                             defaultValue={plexSettings?.plexToken}
                             key={plexSettings?.plexToken}
-                            className="h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
+                            className="h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                         />
-                        <p className="text-xs text-zinc-500 mt-2">
-                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-[#0071E3] hover:text-[#0077ED] hover:underline transition-colors">
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-2">
+                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-[#0071E3] dark:text-[#0A84FF] hover:text-[#0077ED] dark:hover:text-[#0071E3] hover:underline transition-colors">
                                 How to find your token
                             </a>
                         </p>
@@ -122,14 +122,14 @@ export default function SettingsPage() {
 
                     {/* Messages */}
                     {plexError && (
-                        <div className="p-4 rounded-xl bg-red-50/50 border border-red-200 text-[#FF3B30] text-sm flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF3B30]"></span>
+                        <div className="p-4 rounded-xl bg-red-50/50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-[#FF3B30] dark:text-[#FF453A] text-sm flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF3B30] dark:bg-[#FF453A]"></span>
                             {plexError}
                         </div>
                     )}
                     {plexSuccess && (
-                        <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 text-[#34C759] text-sm flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-[#34C759]"></span>
+                        <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-[#34C759] dark:text-[#30D158] text-sm flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#34C759] dark:bg-[#30D158]"></span>
                             {t('settings.success')}
                         </div>
                     )}
@@ -137,7 +137,7 @@ export default function SettingsPage() {
                     <Button
                         type="submit"
                         disabled={plexLoading}
-                        className="w-full h-12 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-xl shadow-sm hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
+                        className="w-full h-12 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-xl shadow-sm hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
                     >
                         {plexLoading ? 'Saving...' : t('settings.plex.save')}
                     </Button>
@@ -145,15 +145,15 @@ export default function SettingsPage() {
             </GlassCard>
 
             <GlassCard>
-                <h1 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center gap-3">
-                    <span className="h-8 w-1 rounded-full bg-[#0071E3]"></span>
+                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
+                    <span className="h-8 w-1 rounded-full bg-[#0071E3] dark:bg-[#0A84FF]"></span>
                     {t('settings.password.title')}
                 </h1>
 
                 <form id="password-form" action={handleSubmit} className="space-y-6">
                     {/* Current Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
                             {t('settings.password.current')}
                         </label>
                         <div className="relative">
@@ -163,14 +163,14 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="current-password"
-                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
+                                className="pl-11 h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
 
                     {/* New Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
                             {t('settings.password.new')}
                         </label>
                         <div className="relative">
@@ -180,14 +180,14 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
+                                className="pl-11 h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>
 
                     {/* Confirm Password */}
                     <div>
-                        <label className="text-sm font-medium text-zinc-600 mb-2 block">
+                        <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2 block">
                             {t('settings.password.confirm')}
                         </label>
                         <div className="relative">
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
+                                className="pl-11 h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                             />
                         </div>
                     </div>

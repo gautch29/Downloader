@@ -31,64 +31,84 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="border-white/10 hover:border-white/20">
-                    <Settings className="h-4 w-4 mr-2" />
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-xs font-medium text-[#0071E3] dark:text-[#0A84FF] hover:text-[#0077ED] dark:hover:text-[#0071E3] hover:bg-[#0071E3]/10 dark:hover:bg-[#0A84FF]/10 rounded-full transition-colors"
+                >
+                    <Settings className="mr-1.5 h-3.5 w-3.5" />
                     {t('paths.manage')}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-white/90 backdrop-blur-xl border-white/20 text-zinc-900 max-w-2xl shadow-2xl">
-                <DialogHeader>
-                    <DialogTitle>{t('paths.title')}</DialogTitle>
-                    <DialogDescription className="text-zinc-500">
-                        {t('paths.description')}
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-white/20 dark:border-white/10 shadow-2xl dark:shadow-none rounded-3xl p-0 overflow-hidden">
+                <div className="p-6 border-b border-zinc-100 dark:border-zinc-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                            <Plus className="h-5 w-5 text-[#0071E3] dark:text-[#0A84FF]" />
+                            {t('paths.title')}
+                        </DialogTitle>
+                        <DialogDescription className="text-zinc-500 dark:text-zinc-400">
+                            {t('paths.description')}
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
 
-                <div className="space-y-6">
+                <div className="p-6 space-y-6">
                     {/* Current Shortcuts */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-zinc-700">{t('paths.current')}</h3>
-                        <div className="space-y-2">
-                            {shortcuts.map((shortcut) => (
-                                <div
-                                    key={shortcut.id}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-white/50 border border-white/40 shadow-sm"
-                                >
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm text-zinc-900">{shortcut.name}</p>
-                                        <p className="text-xs text-zinc-500 font-mono truncate">
-                                            {shortcut.path || t('paths.default')}
-                                        </p>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => handleDelete(shortcut.id)}
-                                        className="text-zinc-400 hover:text-[#FF3B30] hover:bg-[#FF3B30]/10"
-                                        disabled={shortcut.id === 'downloads'}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{t('paths.current')}</h3>
+                        <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                            {shortcuts.length === 0 ? (
+                                <div className="text-center py-8 text-zinc-400 dark:text-zinc-500 text-sm italic">
+                                    {t('paths.empty')}
                                 </div>
-                            ))}
+                            ) : (
+                                shortcuts.map((shortcut) => (
+                                    <div
+                                        key={shortcut.id}
+                                        className="group flex items-center justify-between p-3 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-700/50 hover:border-[#0071E3]/30 dark:hover:border-[#0A84FF]/30 hover:bg-[#0071E3]/5 dark:hover:bg-[#0A84FF]/5 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3 overflow-hidden">
+                                            <div className="h-8 w-8 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center text-zinc-400 dark:text-zinc-300 shadow-sm">
+                                                <Plus className="h-4 w-4" /> {/* Replaced with a generic icon as Folder was not imported */}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-medium text-sm text-zinc-700 dark:text-zinc-200 truncate">{shortcut.name}</p>
+                                                <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono truncate">
+                                                    {shortcut.path || t('paths.default')}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleDelete(shortcut.id)}
+                                            className="h-8 w-8 text-zinc-400 dark:text-zinc-500 hover:text-[#FF3B30] dark:hover:text-[#FF453A] hover:bg-[#FF3B30]/10 dark:hover:bg-[#FF453A]/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                            disabled={shortcut.id === 'downloads'}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
 
                     {/* Add New Shortcut */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-zinc-700">{t('paths.add.title')}</h3>
+                        <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{t('paths.add.title')}</h3>
                         <form action={handleAdd} className="space-y-3">
                             <div>
-                                <label className="text-xs text-zinc-500 mb-1 block">{t('paths.add.name')}</label>
+                                <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">{t('paths.add.name')}</label>
                                 <Input
                                     name="name"
                                     placeholder="e.g., Anime"
                                     required
-                                    className="bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 text-zinc-900 shadow-sm"
+                                    className="h-10 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm"
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-zinc-500 mb-1 block">{t('paths.add.path')}</label>
+                                <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">{t('paths.add.path')}</label>
                                 <Input
                                     name="path"
                                     placeholder="e.g., /mnt/media/Anime or ./Anime"

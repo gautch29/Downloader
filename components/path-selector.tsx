@@ -3,65 +3,73 @@
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Folder } from 'lucide-react';
+import { Folder, FolderInput } from 'lucide-react';
 import type { PathShortcut } from '@/lib/path-config';
+import { useI18n } from '@/lib/i18n';
+import { PathShortcutsModal } from './path-shortcuts-modal';
 
 interface PathSelectorProps {
     shortcuts: PathShortcut[];
 }
 
 export function PathSelector({ shortcuts }: PathSelectorProps) {
-    const [selectedPath, setSelectedPath] = useState('');
+    const { t } = useI18n();
     const [showCustomInput, setShowCustomInput] = useState(false);
 
     function handleValueChange(value: string) {
-        if (value === '__custom__') {
+        if (value === 'custom') {
             setShowCustomInput(true);
-            setSelectedPath('');
         } else {
             setShowCustomInput(false);
-            // Convert __default__ placeholder back to empty string
-            setSelectedPath(value === '__default__' ? '' : value);
         }
     }
 
     return (
-        <div>
-            <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
-                Download Path
-            </label>
-            {!showCustomInput ? (
-                <>
-                    <Select onValueChange={handleValueChange} defaultValue="">
-                        <SelectTrigger className="bg-white/80 border-zinc-200 text-zinc-900 shadow-sm">
-                            <Folder className="h-4 w-4 mr-2 text-zinc-500" />
-                            <SelectValue placeholder="Select path..." />
-                        </SelectTrigger>
-                        <SelectContent className="bg-white/90 backdrop-blur-xl border-white/20 text-zinc-900 shadow-xl">
-                            {shortcuts.map((shortcut) => (
-                                <SelectItem key={shortcut.id} value={shortcut.path || '__default__'}>
-                                    <div className="flex flex-col">
-                                        <span className="font-medium">{shortcut.name}</span>
-                                        <span className="text-xs text-zinc-500 font-mono">
-                                            {shortcut.path || '(Default)'}
-                                        </span>
-                                    </div>
-                                </SelectItem>
-                            ))}
-                            <SelectItem value="__custom__">
-                                <span className="text-[#0071E3]">✏️ Custom path...</span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <input type="hidden" name="targetPath" value={selectedPath} />
-                </>
-            ) : (
-                <Input
-                    name="targetPath"
-                    placeholder="e.g., /mnt/media/Custom or ./Custom"
-                    className="bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 transition-all font-mono text-sm text-zinc-900 shadow-sm"
-                    autoFocus
-                />
+        <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                    {t('download.path')}
+                </label>
+                <PathShortcutsModal shortcuts={shortcuts} />
+            </div>
+
+            <Select name="path" defaultValue="downloads" onValueChange={handleValueChange}>
+                <SelectTrigger className="h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl text-zinc-900 dark:text-white shadow-sm">
+                    <SelectValue placeholder={t('download.path_placeholder')} />
+                </SelectTrigger>
+                <SelectContent className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-zinc-200 dark:border-zinc-800 rounded-xl shadow-xl">
+                    <SelectItem value="downloads" className="text-zinc-900 dark:text-white focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:text-zinc-900 dark:focus:text-white cursor-pointer rounded-lg my-1">
+                        <div className="flex items-center gap-2">
+                            <Folder className="h-4 w-4 text-[#0071E3] dark:text-[#0A84FF]" />
+                            <span>{t('download.path.default')}</span>
+                        </div>
+                    </SelectItem>
+                    {shortcuts.map((shortcut) => (
+                        <SelectItem key={shortcut.id} value={shortcut.path} className="text-zinc-900 dark:text-white focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:text-zinc-900 dark:focus:text-white cursor-pointer rounded-lg my-1">
+                            <div className="flex items-center gap-2">
+                                <Folder className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                                <span className="truncate max-w-[200px]">{shortcut.name}</span>
+                            </div>
+                        </SelectItem>
+                    ))}
+                    <SelectItem value="custom" className="text-[#0071E3] dark:text-[#0A84FF] font-medium focus:bg-[#0071E3]/10 dark:focus:bg-[#0A84FF]/10 focus:text-[#0071E3] dark:focus:text-[#0A84FF] cursor-pointer rounded-lg my-1">
+                        <div className="flex items-center gap-2">
+                            <FolderInput className="h-4 w-4" />
+                            <span>{t('download.path.custom')}</span>
+                        </div>
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+
+            {showCustomInput && (
+                <div className="animate-fade-in-up">
+                    <Input
+                        name="customPath"
+                        placeholder="/home/user/downloads"
+                        className="h-12 bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 transition-all rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 shadow-sm"
+                        autoFocus
+                    />
+                </div>
             )}
         </div>
     );

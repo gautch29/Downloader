@@ -31,12 +31,19 @@
 - [ ] **Settings**: Verify all labels, titles, and success/error messages translate.
 - [ ] **Path Shortcuts**: Verify modal title, descriptions, and button labels translate.
 
-## 3. Mobile Responsiveness
-- [ ] **Layout**: Resize window to mobile width.
-- [ ] Verify padding is appropriate (not too wide/narrow).
-- [ ] Verify inputs and buttons are easily tappable (large enough).
-- [ ] Verify no horizontal scrolling. against the light glass. No white text on white backgrounds.
-    5.  **Inputs**: Check that input fields are light (`bg-white/50`) with dark text.
+### 3. System Dark Mode Verification
+- [ ] **Toggle System Theme**: Switch your OS theme between Light and Dark.
+- [ ] **Check Backgrounds**:
+    - **Light Mode**: Should be white/light grey with light glass cards.
+    - **Dark Mode**: Should be dark grey/black (`#1D1D1F`) with dark glass cards.
+- [ ] **Check Text Legibility**: Ensure text is readable in both modes (Dark text on Light, White text on Dark).
+- [ ] **Check Accents**: Verify "Apple Blue" buttons and icons look good in both modes.
+- [ ] **Check Inputs**: Verify input fields have appropriate background and border colors in both modes.
+
+### 4. Localization Check
+- [ ] **Toggle Language**: Use the language toggle in the header.
+- [ ] **Verify Translations**: Check that all text updates to the selected language (English/French).
+- [ ] **Check Dynamic Content**: Ensure download status and error messages are translated.
 
 ## 2. Complete Localization
 - **Objective**: Verify that ALL text is translated when switching languages.
