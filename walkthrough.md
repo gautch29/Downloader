@@ -1,44 +1,32 @@
-# Verification Walkthrough: Visual Overhaul & Localization
+# Verification Walkthrough: Visual Refinement & Localization
 
-## 1. Visual Redesign ("Liquid Glass")
-- **Objective**: Verify the new "Apple-like liquid glass" aesthetic.
+## 1. "Apple-like" Glass Aesthetic
+- **Objective**: Verify the enhanced glassmorphism effect.
 - **Steps**:
     1.  Navigate to the home page (`/`).
-    2.  Observe the background: It should be a dark, animated mesh gradient.
-    3.  Observe the cards: They should have a glassmorphism effect (blur, transparency, subtle borders).
-    4.  Check the "Add Download" section and "Active Downloads" list for the new styling.
-    5.  Navigate to Settings (`/settings`) and verify the same aesthetic is applied to the Plex and Password forms.
+    2.  **Blur & Saturation**: Observe the glass cards. They should have a stronger blur (`backdrop-filter: blur(40px)`) and increased saturation (`saturate(180%)`), making the background colors pop through more vividly.
+    3.  **Borders**: Check for a subtle, translucent white border (`border-white/20`) that defines the edges cleanly.
+    4.  **Shadows**: Verify that shadows are softer and more diffuse, lifting the elements off the background.
 
-## 2. Localization (English/French)
-- **Objective**: Verify language switching works correctly.
+## 2. Complete Localization
+- **Objective**: Verify that ALL text is translated when switching languages.
 - **Steps**:
-    1.  Look for the language toggle (FR/EN) in the header.
-    2.  Click "FR".
-    3.  Verify that text on the page changes to French (e.g., "Start New Download" -> "Nouvel ajout", "Active Downloads" -> "Téléchargements actifs").
-    4.  Click "EN".
-    5.  Verify text reverts to English.
-    6.  Navigate to Settings and verify translations there as well.
+    1.  Toggle language to **French (FR)**.
+    2.  **Home Page**:
+        -   "Active Downloads" -> "Téléchargements actifs"
+        -   "No downloads yet" -> "Aucun téléchargement"
+        -   "Custom Filename (optional)" -> "Nom de fichier personnalisé (optionnel)"
+        -   "Paste your 1fichier premium link..." -> "Collez votre lien premium 1fichier..."
+    3.  **Download Cards** (if any active):
+        -   Status badges: "Downloading" -> "Téléchargement", "Completed" -> "Terminé", etc.
+        -   Cancel button confirmation: "Êtes-vous sûr de vouloir annuler ce téléchargement ?"
+    4.  **Path Shortcuts Modal** (Click "Manage Paths" / "Gérer les chemins"):
+        -   Title: "Gérer les raccourcis"
+        -   Button: "Ajouter un raccourci"
+        -   Labels: "Nom", "Chemin"
 
-## 3. Branding
-- **Objective**: Verify the app name is updated.
+## 3. Mobile Responsiveness (Regression Check)
+- **Objective**: Ensure the visual changes didn't break mobile layout.
 - **Steps**:
-    1.  Check the browser tab title. It should read "dl.flgr.fr".
-    2.  Check the header logo/text. It should display "dl.flgr.fr".
-
-## 4. Mobile Responsiveness
-- **Objective**: Verify the layout on mobile devices.
-- **Steps**:
-    1.  Resize the browser window to a mobile width (e.g., 375px).
-    2.  Verify that the layout adapts:
-        -   The header should fit or stack elements gracefully.
-        -   The "Add Download" card should stack inputs vertically if needed.
-        -   The download cards should be full width.
-        -   Padding and margins should be appropriate for touch.
-
-## 5. Plex Integration (Regression Test)
-- **Objective**: Ensure Plex settings still work with the new UI.
-- **Steps**:
-    1.  Go to Settings.
-    2.  Enter/Update Plex URL and Token.
-    3.  Click Save.
-    4.  Verify success message appears and settings are saved.
+    1.  Resize to mobile width.
+    2.  Verify that the new glass effects still look good and don't cause overflow or readability issues.

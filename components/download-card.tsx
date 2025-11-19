@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cancelDownload } from '@/app/downloads/actions';
+import { useI18n } from '@/lib/i18n';
 
 interface DownloadCardProps {
     download: {
@@ -23,13 +24,14 @@ interface DownloadCardProps {
 }
 
 export function DownloadCard({ download }: DownloadCardProps) {
+    const { t } = useI18n();
     const isDownloading = download.status === 'downloading';
     const isCompleted = download.status === 'completed';
     const isError = download.status === 'error';
     const isPending = download.status === 'pending';
 
     async function handleCancel() {
-        if (confirm('Are you sure you want to cancel this download?')) {
+        if (confirm(t('download.cancel.confirm'))) {
             await cancelDownload(download.id);
         }
     }
@@ -54,7 +56,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                             {download.targetPath && (
                                 <span className="text-zinc-500 font-normal text-xs">{download.targetPath}/</span>
                             )}
-                            {download.customFilename || download.filename || 'Detecting filename...'}
+                            {download.customFilename || download.filename || t('download.detecting_filename')}
                         </h3>
                         <Badge
                             variant="outline"
@@ -66,7 +68,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                 ${download.status === 'pending' ? 'bg-zinc-500/10 text-zinc-400' : ''}
               `}
                         >
-                            {download.status}
+                            {t(`download.status.${download.status}`)}
                         </Badge>
                     </div>
                     <p className="text-xs text-zinc-500 truncate font-mono">
@@ -85,7 +87,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                     {download.progress || 0}%
                                 </span>
                                 <span className="text-[10px] text-zinc-500 uppercase tracking-wider">
-                                    Downloading
+                                    {t('download.status.downloading')}
                                 </span>
                             </>
                         ) : (

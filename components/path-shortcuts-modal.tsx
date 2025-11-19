@@ -7,12 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Settings, Plus, Trash2 } from 'lucide-react';
 import { addPathShortcutAction, deletePathShortcutAction } from '@/app/paths/actions';
 import type { PathShortcut } from '@/lib/path-config';
+import { useI18n } from '@/lib/i18n';
 
 interface PathShortcutsModalProps {
     shortcuts: PathShortcut[];
 }
 
 export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
+    const { t } = useI18n();
     const [open, setOpen] = useState(false);
 
     async function handleAdd(formData: FormData) {
@@ -21,7 +23,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
     }
 
     async function handleDelete(id: string) {
-        if (confirm('Are you sure you want to delete this shortcut?')) {
+        if (confirm(t('paths.delete.confirm'))) {
             await deletePathShortcutAction(id);
         }
     }
@@ -31,21 +33,21 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-white/10 hover:border-white/20">
                     <Settings className="h-4 w-4 mr-2" />
-                    Manage Paths
+                    {t('paths.manage')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="bg-zinc-900 border-white/10 text-white max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Manage Path Shortcuts</DialogTitle>
+                    <DialogTitle>{t('paths.title')}</DialogTitle>
                     <DialogDescription className="text-zinc-400">
-                        Add, edit, or remove download path shortcuts
+                        {t('paths.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">
                     {/* Current Shortcuts */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-zinc-300">Current Shortcuts</h3>
+                        <h3 className="text-sm font-medium text-zinc-300">{t('paths.current')}</h3>
                         <div className="space-y-2">
                             {shortcuts.map((shortcut) => (
                                 <div
@@ -55,7 +57,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                     <div className="flex-1 min-w-0">
                                         <p className="font-medium text-sm text-white">{shortcut.name}</p>
                                         <p className="text-xs text-zinc-500 font-mono truncate">
-                                            {shortcut.path || '(Default download directory)'}
+                                            {shortcut.path || t('paths.default')}
                                         </p>
                                     </div>
                                     <Button
@@ -74,10 +76,10 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
 
                     {/* Add New Shortcut */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-medium text-zinc-300">Add New Shortcut</h3>
+                        <h3 className="text-sm font-medium text-zinc-300">{t('paths.add.title')}</h3>
                         <form action={handleAdd} className="space-y-3">
                             <div>
-                                <label className="text-xs text-zinc-400 mb-1 block">Name</label>
+                                <label className="text-xs text-zinc-400 mb-1 block">{t('paths.add.name')}</label>
                                 <Input
                                     name="name"
                                     placeholder="e.g., Anime"
@@ -86,7 +88,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                 />
                             </div>
                             <div>
-                                <label className="text-xs text-zinc-400 mb-1 block">Path</label>
+                                <label className="text-xs text-zinc-400 mb-1 block">{t('paths.add.path')}</label>
                                 <Input
                                     name="path"
                                     placeholder="e.g., /mnt/media/Anime or ./Anime"
@@ -94,12 +96,12 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                     className="bg-black/20 border-white/10 font-mono text-sm"
                                 />
                                 <p className="text-xs text-zinc-500 mt-1">
-                                    Use absolute paths (e.g., /mnt/media/...) or relative to download directory
+                                    {t('paths.add.help')}
                                 </p>
                             </div>
                             <Button type="submit" className="w-full bg-violet-600 hover:bg-violet-700">
                                 <Plus className="h-4 w-4 mr-2" />
-                                Add Shortcut
+                                {t('paths.add.button')}
                             </Button>
                         </form>
                     </div>

@@ -35,7 +35,7 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                                     {t('download.title')}
                                 </h2>
                                 <p className="text-zinc-400 text-lg font-light">
-                                    Paste your 1fichier premium link and choose where to save it.
+                                    {t('download.subtitle')}
                                 </p>
                             </div>
                             <PathShortcutsModal shortcuts={pathShortcuts} />
@@ -60,7 +60,7 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                                 <PathSelector shortcuts={pathShortcuts} />
                                 <div>
                                     <label className="text-xs font-medium text-zinc-400 mb-2 block uppercase tracking-wider">
-                                        Custom Filename (optional)
+                                        {t('download.custom_filename')}
                                     </label>
                                     <Input
                                         name="customFilename"
@@ -86,10 +86,10 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
             <section className="space-y-6 animate-fade-in-up delay-100">
                 <div className="flex items-center justify-between px-2">
                     <h3 className="text-xl font-semibold text-white tracking-tight">
-                        Active Downloads
+                        {t('download.active.title')}
                     </h3>
                     <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                        {downloads.length} Items
+                        {downloads.length} {t('download.active.count')}
                     </span>
                 </div>
 
@@ -104,8 +104,8 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                                 <div className="mb-6 rounded-full bg-white/5 p-6 ring-1 ring-white/10">
                                     <Download className="h-10 w-10 text-zinc-600" />
                                 </div>
-                                <p className="text-zinc-400 font-medium text-lg">No downloads yet</p>
-                                <p className="text-sm text-zinc-600 mt-2">Add a link above to get started</p>
+                                <p className="text-zinc-400 font-medium text-lg">{t('download.empty.title')}</p>
+                                <p className="text-sm text-zinc-600 mt-2">{t('download.empty.subtitle')}</p>
                             </GlassCard>
                         </div>
                     )}
