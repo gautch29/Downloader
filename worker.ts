@@ -46,9 +46,13 @@ async function processQueue() {
                     if (totalBytes === 0 && progress.totalBytes) {
                         totalBytes = progress.totalBytes;
                         // Update database with file size
-                        await db.update(downloads)
-                            .set({ size: totalBytes })
-                            .where(eq(downloads.id, download.id));
+                        try {
+                            await db.update(downloads)
+                                .set({ size: totalBytes })
+                                .where(eq(downloads.id, download.id));
+                        } catch (dbError) {
+                            console.error(`Failed to update file size in DB:`, dbError);
+                        }
                     }
 
                     downloadedBytes = progress.transferredBytes;
@@ -59,14 +63,18 @@ async function processQueue() {
 
                     if (now - lastProgressUpdate > 2000 || progressPercent >= 99) {
                         lastProgressUpdate = now;
-                        await db.update(downloads)
-                            .set({
-                                progress: progressPercent,
-                                updatedAt: new Date()
-                            })
-                            .where(eq(downloads.id, download.id));
+                        try {
+                            await db.update(downloads)
+                                .set({
+                                    progress: progressPercent,
+                                    updatedAt: new Date()
+                                })
+                                .where(eq(downloads.id, download.id));
 
-                        console.log(`Download ${download.id}: ${progressPercent}% (${(downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(totalBytes / 1024 / 1024).toFixed(1)}MB)`);
+                            console.log(`Download ${download.id}: ${progressPercent}% (${(downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(totalBytes / 1024 / 1024).toFixed(1)}MB)`);
+                        } catch (dbError) {
+                            console.error(`Failed to update progress in DB:`, dbError);
+                        }
                     }
                 }
             });

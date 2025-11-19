@@ -8,6 +8,10 @@ import { PathSelector } from '@/components/path-selector';
 import { AutoRefresh } from '@/components/auto-refresh';
 import { Plus, Download } from 'lucide-react';
 
+// Force dynamic rendering and disable caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
     const downloads = await getDownloads();
     const pathShortcuts = await getPathShortcutsAction();
