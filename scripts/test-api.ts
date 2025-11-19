@@ -41,8 +41,9 @@ async function testApi() {
     const authHeaders = [
         { 'Authorization': `Bearer ${API_KEY}` },
         { 'Authorization': API_KEY }, // Plain key
-        { 'Api-Key': API_KEY }, // Custom header
     ];
+
+    const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
     for (const headers of authHeaders) {
         console.log(`\nTrying Headers: ${JSON.stringify(headers)}`);
@@ -51,6 +52,7 @@ async function testApi() {
                 headers: {
                     ...headers,
                     'Content-Type': 'application/json',
+                    'User-Agent': userAgent,
                 },
                 json: { url: TEST_URL },
                 throwHttpErrors: false
@@ -68,6 +70,13 @@ async function testApi() {
             console.error('Request failed:', error);
         }
     }
+
+    console.log('\n--- Manual Verification ---');
+    console.log('Try running this curl command directly to rule out Node.js/Library issues:');
+    console.log(`curl -X POST "https://api.1fichier.com/v1/download/get_token.cgi" \\
+  -H "Authorization: Bearer ${API_KEY}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"url": "${TEST_URL}"}'`);
 }
 
 testApi();
