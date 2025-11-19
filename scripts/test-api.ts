@@ -14,6 +14,13 @@ async function testApi() {
     console.log(`API Key: ${API_KEY.substring(0, 5)}...`);
     console.log(`Target URL: ${TEST_URL}`);
 
+    try {
+        const ip = await ky.get('https://ifconfig.me', { timeout: 5000 }).text();
+        console.log(`Container Public IP: ${ip}`);
+    } catch (e) {
+        console.log('Could not fetch public IP');
+    }
+
     // 1. Test Auth (List files - simplified)
     // Note: 'ls' might require folder_id, but let's try a basic user info or similar if available.
     // Actually, let's just try the download endpoint with different formats.
