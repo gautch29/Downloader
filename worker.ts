@@ -156,7 +156,9 @@ async function processQueue() {
             console.log(`Download completed: ${filePath}`);
 
             // Trigger Plex scan
+            console.log('Attempting to trigger Plex scan...');
             await scanPlexLibrary();
+            console.log('Plex scan trigger function returned.');
 
         } catch (error: any) {
             console.error(`Download failed for ${download.url}:`, error);
