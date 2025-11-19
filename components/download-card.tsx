@@ -32,6 +32,9 @@ export function DownloadCard({ download }: DownloadCardProps) {
         }
     }
 
+    // Bind the cancel action with the download ID
+    const boundCancelAction = cancelDownload.bind(null, download.id);
+
     return (
         <div className="group relative overflow-hidden rounded-xl border border-white/5 bg-zinc-900/40 p-4 transition-all hover:border-white/10 hover:bg-zinc-900/60">
             {/* Progress Background for Downloading State */}
@@ -91,16 +94,15 @@ export function DownloadCard({ download }: DownloadCardProps) {
                     </div>
 
                     {(isDownloading || isPending) && (
-                        <form action={handleCancel}>
-                            <Button
-                                type="submit"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            >
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </form>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleCancel}
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
                     )}
                 </div>
             </div>
