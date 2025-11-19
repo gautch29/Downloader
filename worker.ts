@@ -135,7 +135,24 @@ async function processQueue() {
                 }
 
                 // Ensure the directory exists
-                fs.mkdirSync(targetDir, { recursive: true });
+                if (!fs.existsSync(targetDir)) {
+                    console.log(`Creating directory: ${targetDir}`);
+                    fs.mkdirSync(targetDir, { recursive: true, mode: 0o777 });
+                }
+
+                // Check write permissions
+                try {
+                    fs.accessSync(targetDir, fs.constants.W_OK);
+                } catch (err) {
+                    console.log(`Directory ${targetDir} is not writable. Attempting to fix permissions...`);
+                    try {
+                        fs.chmodSync(targetDir, '777');
+                        console.log(`Permissions fixed for ${targetDir}`);
+                    } catch (chmodErr: any) {
+                        console.error(`Failed to fix permissions for ${targetDir}:`, chmodErr.message);
+                        throw new Error(`Permission denied: Cannot write to ${targetDir}. Please check folder permissions.`);
+                    }
+                }
             }
 
             const filePath = path.join(targetDir, filename);
