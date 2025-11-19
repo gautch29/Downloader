@@ -47,8 +47,26 @@ async function processQueue() {
 
             if (!response.body) throw new Error('No response body');
 
-            // Sanitize and determine filename
-            let filename = download.customFilename || download.filename || path.basename(new URL(directLink).pathname) || `file-${download.id}`;
+            // Extract filename from Content-Disposition header (like a browser would)
+            let filename = download.customFilename;
+
+            if (!filename) {
+                // Try to get filename from Content-Disposition header
+                const contentDisposition = response.headers.get('content-disposition');
+                if (contentDisposition) {
+                    // Parse: Content-Disposition: attachment; filename="example.zip"
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch && filenameMatch[1]) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+
+                // Fallback to database filename, URL path, or generated name
+                if (!filename) {
+                    filename = download.filename || path.basename(new URL(directLink).pathname) || `file-${download.id}`;
+                }
+            }
+
             // Remove any path separators from filename for security
             filename = path.basename(filename);
 
