@@ -1,5 +1,5 @@
-import { db } from './lib/db.js';
-import { downloads } from './db/schema.js';
+import { db } from '../lib/db.js';
+import { downloads } from '../db/schema.js';
 import { desc } from 'drizzle-orm';
 
 async function checkDownloads() {
