@@ -111,10 +111,10 @@ export default function SettingsPage() {
                             placeholder="X-Plex-Token"
                             defaultValue={plexSettings?.plexToken}
                             key={plexSettings?.plexToken}
-                            className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 rounded-xl text-zinc-900"
+                            className="h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
                         />
                         <p className="text-xs text-zinc-500 mt-2">
-                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-violet-600 hover:text-violet-500 hover:underline transition-colors">
+                            <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/" target="_blank" rel="noopener noreferrer" className="text-[#0071E3] hover:text-[#0077ED] hover:underline transition-colors">
                                 How to find your token
                             </a>
                         </p>
@@ -122,14 +122,14 @@ export default function SettingsPage() {
 
                     {/* Messages */}
                     {plexError && (
-                        <div className="p-4 rounded-xl bg-red-50/50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                        <div className="p-4 rounded-xl bg-red-50/50 border border-red-200 text-[#FF3B30] text-sm flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#FF3B30]"></span>
                             {plexError}
                         </div>
                     )}
                     {plexSuccess && (
-                        <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 text-emerald-600 text-sm flex items-center gap-2">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 text-[#34C759] text-sm flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-[#34C759]"></span>
                             {t('settings.success')}
                         </div>
                     )}
@@ -137,7 +137,7 @@ export default function SettingsPage() {
                     <Button
                         type="submit"
                         disabled={plexLoading}
-                        className="w-full h-12 bg-violet-600 hover:bg-violet-700 text-white rounded-xl shadow-lg shadow-violet-500/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                        className="w-full h-12 bg-[#0071E3] hover:bg-[#0077ED] text-white rounded-xl shadow-sm hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
                     >
                         {plexLoading ? 'Saving...' : t('settings.plex.save')}
                     </Button>
@@ -146,7 +146,7 @@ export default function SettingsPage() {
 
             <GlassCard>
                 <h1 className="text-2xl font-bold text-zinc-900 mb-8 flex items-center gap-3">
-                    <span className="h-8 w-1 rounded-full bg-fuchsia-500"></span>
+                    <span className="h-8 w-1 rounded-full bg-[#0071E3]"></span>
                     {t('settings.password.title')}
                 </h1>
 
@@ -163,7 +163,7 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="current-password"
-                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
+                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
                             />
                         </div>
                     </div>
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
+                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
                             />
                         </div>
                     </div>
@@ -197,7 +197,7 @@ export default function SettingsPage() {
                                 type="password"
                                 required
                                 autoComplete="new-password"
-                                className="pl-11 h-12 bg-white/50 border-white/40 focus:border-fuchsia-500/50 focus:ring-fuchsia-500/20 rounded-xl text-zinc-900"
+                                className="pl-11 h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 rounded-xl text-zinc-900 shadow-sm"
                             />
                         </div>
                     </div>

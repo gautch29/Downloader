@@ -33,11 +33,11 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
             {!showCustomInput ? (
                 <>
                     <Select onValueChange={handleValueChange} defaultValue="">
-                        <SelectTrigger className="bg-white/50 border-white/40 text-zinc-900">
+                        <SelectTrigger className="bg-white/80 border-zinc-200 text-zinc-900 shadow-sm">
                             <Folder className="h-4 w-4 mr-2 text-zinc-500" />
                             <SelectValue placeholder="Select path..." />
                         </SelectTrigger>
-                        <SelectContent className="bg-white/90 backdrop-blur-xl border-white/20 text-zinc-900">
+                        <SelectContent className="bg-white/90 backdrop-blur-xl border-white/20 text-zinc-900 shadow-xl">
                             {shortcuts.map((shortcut) => (
                                 <SelectItem key={shortcut.id} value={shortcut.path || '__default__'}>
                                     <div className="flex flex-col">
@@ -49,7 +49,7 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
                                 </SelectItem>
                             ))}
                             <SelectItem value="__custom__">
-                                <span className="text-violet-600">✏️ Custom path...</span>
+                                <span className="text-[#0071E3]">✏️ Custom path...</span>
                             </SelectItem>
                         </SelectContent>
                     </Select>
@@ -59,7 +59,7 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
                 <Input
                     name="targetPath"
                     placeholder="e.g., /mnt/media/Custom or ./Custom"
-                    className="bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all font-mono text-sm text-zinc-900"
+                    className="bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 transition-all font-mono text-sm text-zinc-900 shadow-sm"
                     autoFocus
                 />
             )}

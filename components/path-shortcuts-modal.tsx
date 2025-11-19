@@ -64,7 +64,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => handleDelete(shortcut.id)}
-                                        className="text-red-400 hover:text-red-500 hover:bg-red-500/10"
+                                        className="text-zinc-400 hover:text-[#FF3B30] hover:bg-[#FF3B30]/10"
                                         disabled={shortcut.id === 'downloads'}
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                     name="name"
                                     placeholder="e.g., Anime"
                                     required
-                                    className="bg-white/50 border-white/40 text-zinc-900"
+                                    className="bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 text-zinc-900 shadow-sm"
                                 />
                             </div>
                             <div>
@@ -93,13 +93,13 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                     name="path"
                                     placeholder="e.g., /mnt/media/Anime or ./Anime"
                                     required
-                                    className="bg-white/50 border-white/40 font-mono text-sm text-zinc-900"
+                                    className="bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 font-mono text-sm text-zinc-900 shadow-sm"
                                 />
                                 <p className="text-xs text-zinc-500 mt-1">
                                     {t('paths.add.help')}
                                 </p>
                             </div>
-                            <Button type="submit" className="w-full bg-violet-600 hover:bg-violet-700 text-white">
+                            <Button type="submit" className="w-full bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-sm hover:shadow-md">
                                 <Plus className="h-4 w-4 mr-2" />
                                 {t('paths.add.button')}
                             </Button>

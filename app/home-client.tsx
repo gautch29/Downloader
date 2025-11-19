@@ -31,7 +31,7 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                         <div className="flex items-center justify-between">
                             <div className="space-y-2">
                                 <h2 className="text-3xl font-bold tracking-tight text-zinc-900 flex items-center gap-3">
-                                    <Sparkles className="h-6 w-6 text-violet-600" />
+                                    <Sparkles className="h-6 w-6 text-[#0071E3]" />
                                     {t('download.title')}
                                 </h2>
                                 <p className="text-zinc-500 text-lg font-light">
@@ -44,14 +44,14 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                         <form action={addDownload} className="space-y-6">
                             {/* URL Input */}
                             <div className="relative group">
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-violet-600 transition-colors">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#0071E3] transition-colors">
                                     <Download className="h-5 w-5" />
                                 </div>
                                 <Input
                                     name="url"
                                     placeholder={t('download.placeholder')}
                                     required
-                                    className="pl-12 h-14 text-lg bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-2xl text-zinc-900 placeholder:text-zinc-400"
+                                    className="pl-12 h-14 text-lg bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 transition-all rounded-2xl text-zinc-900 placeholder:text-zinc-400 shadow-sm"
                                 />
                             </div>
 
@@ -65,14 +65,14 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                                     <Input
                                         name="customFilename"
                                         placeholder="e.g., my-video.mkv"
-                                        className="h-12 bg-white/50 border-white/40 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all rounded-xl text-zinc-900 placeholder:text-zinc-400"
+                                        className="h-12 bg-white/80 border-zinc-200 focus:border-[#0071E3] focus:ring-[#0071E3]/20 transition-all rounded-xl text-zinc-900 placeholder:text-zinc-400 shadow-sm"
                                     />
                                 </div>
                             </div>
 
                             <Button
                                 type="submit"
-                                className="w-full h-14 text-lg font-medium bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white shadow-lg shadow-violet-500/25 transition-all hover:scale-[1.01] active:scale-[0.99] rounded-2xl"
+                                className="w-full h-14 text-lg font-medium bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-sm hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99] rounded-2xl"
                             >
                                 <Plus className="mr-2 h-5 w-5" />
                                 {t('download.button')}

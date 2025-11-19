@@ -37,8 +37,8 @@ export function HeaderClient({ username }: HeaderClientProps) {
                     <div className="h-8 w-px bg-zinc-200" />
 
                     <div className="flex items-center gap-3 bg-white/50 rounded-full px-4 py-1.5 border border-white/40 shadow-sm">
-                        <Activity className="h-3.5 w-3.5 animate-pulse text-emerald-500" />
-                        <span className="text-xs font-medium uppercase tracking-wider text-emerald-600">
+                        <Activity className="h-3.5 w-3.5 text-[#0071E3]" />
+                        <span className="text-xs font-medium uppercase tracking-wider text-zinc-600">
                             {username}
                         </span>
                     </div>
