@@ -20,7 +20,8 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
             setSelectedPath('');
         } else {
             setShowCustomInput(false);
-            setSelectedPath(value);
+            // Convert __default__ placeholder back to empty string
+            setSelectedPath(value === '__default__' ? '' : value);
         }
     }
 
@@ -38,7 +39,7 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-white/10">
                             {shortcuts.map((shortcut) => (
-                                <SelectItem key={shortcut.id} value={shortcut.path}>
+                                <SelectItem key={shortcut.id} value={shortcut.path || '__default__'}>
                                     <div className="flex flex-col">
                                         <span className="font-medium">{shortcut.name}</span>
                                         <span className="text-xs text-zinc-500 font-mono">
