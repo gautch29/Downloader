@@ -1,4 +1,12 @@
 import ky from 'ky';
+import { setDefaultResultOrder } from 'node:dns';
+
+// Force IPv4 to avoid 1fichier "IP Locked" error on IPv6
+try {
+    setDefaultResultOrder('ipv4first');
+} catch (e) {
+    console.warn('Could not set default DNS result order:', e);
+}
 
 const API_KEY = process.env.ONEFICHIER_API_KEY;
 
