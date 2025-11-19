@@ -35,13 +35,39 @@ async function processQueue() {
             // 1. Get direct link
             const directLink = await oneFichier.getDownloadLink(download.url);
 
-            // 2. Start download
+            // 2. Start download with progress tracking
+            let lastProgressUpdate = 0;
+            let totalBytes = 0;
+            let downloadedBytes = 0;
+
             const response = await ky.get(directLink, {
-                onDownloadProgress: async (progress, chunk) => {
-                    // Update progress in DB periodically (e.g., every 5% or 1 second)
-                    // For simplicity, we'll just log it for now or update DB sparingly
-                    // to avoid locking it too much.
-                    // In a real app, use a throttle.
+                onDownloadProgress: async (progress) => {
+                    // Get total size if available
+                    if (totalBytes === 0 && progress.totalBytes) {
+                        totalBytes = progress.totalBytes;
+                        // Update database with file size
+                        await db.update(downloads)
+                            .set({ size: totalBytes })
+                            .where(eq(downloads.id, download.id));
+                    }
+
+                    downloadedBytes = progress.transferredBytes;
+
+                    // Update progress in DB every 2 seconds to avoid too many writes
+                    const now = Date.now();
+                    const progressPercent = progress.percent ? Math.floor(progress.percent * 100) : 0;
+
+                    if (now - lastProgressUpdate > 2000 || progressPercent >= 99) {
+                        lastProgressUpdate = now;
+                        await db.update(downloads)
+                            .set({
+                                progress: progressPercent,
+                                updatedAt: new Date()
+                            })
+                            .where(eq(downloads.id, download.id));
+
+                        console.log(`Download ${download.id}: ${progressPercent}% (${(downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(totalBytes / 1024 / 1024).toFixed(1)}MB)`);
+                    }
                 }
             });
 
