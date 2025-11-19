@@ -46,7 +46,11 @@ export class OneFichierClient {
             }
 
             throw new Error('No download link found in response');
-        } catch (error) {
+        } catch (error: any) {
+            if (error.name === 'HTTPError') {
+                const errorBody = await error.response.text();
+                console.error('1fichier API Error Response:', errorBody);
+            }
             console.error('Error getting 1fichier link:', error);
             throw error;
         }
