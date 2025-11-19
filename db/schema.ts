@@ -6,7 +6,7 @@ export const downloads = sqliteTable('downloads', {
     url: text('url').notNull(),
     filename: text('filename'),
     customFilename: text('custom_filename'),
-    customDirectory: text('custom_directory'),
+    targetPath: text('target_path'),
     status: text('status', { enum: ['pending', 'downloading', 'completed', 'error'] }).default('pending').notNull(),
     progress: integer('progress').default(0).notNull(),
     size: integer('size'),

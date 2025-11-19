@@ -8,7 +8,7 @@ import { desc } from 'drizzle-orm';
 export async function addDownload(formData: FormData) {
     const url = formData.get('url') as string;
     const customFilename = formData.get('customFilename') as string | null;
-    const customDirectory = formData.get('customDirectory') as string | null;
+    const targetPath = formData.get('targetPath') as string | null;
 
     if (!url) {
         throw new Error('URL is required');
@@ -17,7 +17,7 @@ export async function addDownload(formData: FormData) {
     await db.insert(downloads).values({
         url,
         customFilename: customFilename || null,
-        customDirectory: customDirectory || null,
+        targetPath: targetPath || null,
         status: 'pending',
     });
 

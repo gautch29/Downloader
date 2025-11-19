@@ -52,20 +52,19 @@ async function processQueue() {
             // Remove any path separators from filename for security
             filename = path.basename(filename);
 
-            // Sanitize and create directory path
+            // Determine target directory
             let targetDir = DOWNLOAD_DIR;
-            if (download.customDirectory) {
-                // Sanitize: remove leading/trailing slashes, prevent directory traversal
-                const sanitizedDir = download.customDirectory
-                    .replace(/^[\/\\]+|[\/\\]+$/g, '') // Remove leading/trailing slashes
-                    .replace(/\.\./g, '') // Remove .. (directory traversal)
-                    .replace(/[<>:"|?*]/g, ''); // Remove invalid characters
-
-                if (sanitizedDir) {
-                    targetDir = path.join(DOWNLOAD_DIR, sanitizedDir);
-                    // Ensure the directory exists
-                    fs.mkdirSync(targetDir, { recursive: true });
+            if (download.targetPath) {
+                // If targetPath is absolute, use it directly
+                // If relative, join with DOWNLOAD_DIR
+                if (path.isAbsolute(download.targetPath)) {
+                    targetDir = download.targetPath;
+                } else {
+                    targetDir = path.join(DOWNLOAD_DIR, download.targetPath);
                 }
+
+                // Ensure the directory exists
+                fs.mkdirSync(targetDir, { recursive: true });
             }
 
             const filePath = path.join(targetDir, filename);

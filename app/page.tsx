@@ -1,24 +1,31 @@
 import { getDownloads, addDownload } from './actions';
+import { getPathShortcutsAction } from './paths/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DownloadCard } from '@/components/download-card';
-import { Plus, Download } from 'lucide-react';
+import { PathShortcutsModal } from '@/components/path-shortcuts-modal';
+import { Plus, Download, Folder } from 'lucide-react';
 
 export default async function Home() {
     const downloads = await getDownloads();
+    const pathShortcuts = await getPathShortcutsAction();
 
     return (
         <div className="container mx-auto p-6 max-w-5xl space-y-8">
             {/* Hero / Add Section */}
             <section className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-900/40 p-8 backdrop-blur-sm animate-fade-in-up">
                 <div className="relative z-10 space-y-6">
-                    <div className="space-y-2">
-                        <h2 className="text-2xl font-bold tracking-tight text-white">
-                            Start New Download
-                        </h2>
-                        <p className="text-zinc-400">
-                            Paste your 1fichier premium link and customize the download location.
-                        </p>
+                    <div className="flex items-center justify-between">
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-bold tracking-tight text-white">
+                                Start New Download
+                            </h2>
+                            <p className="text-zinc-400">
+                                Paste your 1fichier premium link and choose where to save it.
+                            </p>
+                        </div>
+                        <PathShortcutsModal shortcuts={pathShortcuts} />
                     </div>
 
                     <form action={addDownload} className="space-y-4">
@@ -35,8 +42,34 @@ export default async function Home() {
                             />
                         </div>
 
-                        {/* Custom Filename and Directory */}
+                        {/* Path and Filename Selection */}
                         <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
+                                    Download Path
+                                </label>
+                                <Select name="targetPath">
+                                    <SelectTrigger className="bg-black/20 border-white/10">
+                                        <Folder className="h-4 w-4 mr-2 text-zinc-500" />
+                                        <SelectValue placeholder="Select path..." />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-zinc-900 border-white/10">
+                                        {pathShortcuts.map((shortcut) => (
+                                            <SelectItem key={shortcut.id} value={shortcut.path}>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">{shortcut.name}</span>
+                                                    <span className="text-xs text-zinc-500 font-mono">
+                                                        {shortcut.path || '(Default)'}
+                                                    </span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                        <SelectItem value="__custom__">
+                                            <span className="text-violet-400">✏️ Custom path...</span>
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                             <div>
                                 <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
                                     Custom Filename (optional)
@@ -44,16 +77,6 @@ export default async function Home() {
                                 <Input
                                     name="customFilename"
                                     placeholder="e.g., my-video.mkv"
-                                    className="bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all"
-                                />
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-zinc-400 mb-1.5 block">
-                                    Subdirectory (optional)
-                                </label>
-                                <Input
-                                    name="customDirectory"
-                                    placeholder="e.g., Movies/Action"
                                     className="bg-black/20 border-white/10 focus:border-violet-500/50 focus:ring-violet-500/20 transition-all"
                                 />
                             </div>
