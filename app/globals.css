@@ -106,42 +106,93 @@
 
 @layer utilities {
 
-  /* Apple Liquid Glass - Ultra translucent, premium blur */
+  /* Apple Liquid Glass - Ultra translucent, premium blur with diffraction */
   .glass {
     @apply bg-white/60 dark:bg-zinc-900/60 backdrop-blur-3xl border border-white/30 dark:border-white/10 shadow-lg dark:shadow-2xl;
   }
 
   .glass-card {
-    @apply bg-white/50 dark:bg-zinc-800/40 backdrop-blur-3xl border border-white/50 dark:border-white/10 rounded-3xl transition-all duration-300;
+    @apply backdrop-blur-3xl rounded-3xl transition-all duration-300 relative overflow-hidden;
+
+    /* Base glass with subtle gradient for diffraction effect */
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.6) 0%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0.55) 100%);
+
+    /* Multi-layer border for glass edge refraction */
+    border: 1px solid rgba(255, 255, 255, 0.6);
+
+    /* Enhanced depth with multiple shadows and highlights */
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.06),
-      0 1px 1px rgba(255, 255, 255, 0.4) inset,
-      0 -1px 1px rgba(0, 0, 0, 0.05) inset;
+      0 2px 4px rgba(255, 255, 255, 0.5) inset,
+      0 -2px 4px rgba(0, 0, 0, 0.05) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+  }
+
+  /* Subtle top highlight for glass refraction */
+  .glass-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.3) 0%,
+        rgba(255, 255, 255, 0) 100%);
+    pointer-events: none;
+    border-radius: inherit;
   }
 
   @media (prefers-color-scheme: dark) {
     .glass-card {
+      background: linear-gradient(135deg,
+          rgba(39, 39, 42, 0.5) 0%,
+          rgba(39, 39, 42, 0.4) 50%,
+          rgba(39, 39, 42, 0.45) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.4),
-        0 1px 1px rgba(255, 255, 255, 0.05) inset,
-        0 -1px 1px rgba(0, 0, 0, 0.2) inset;
+        0 2px 4px rgba(255, 255, 255, 0.08) inset,
+        0 -2px 4px rgba(0, 0, 0, 0.3) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    }
+
+    .glass-card::before {
+      background: linear-gradient(180deg,
+          rgba(255, 255, 255, 0.08) 0%,
+          rgba(255, 255, 255, 0) 100%);
     }
   }
 
   .glass-card:hover {
-    @apply transform scale-[1.005] bg-white/60 dark:bg-zinc-800/50;
+    @apply transform scale-[1.005];
+    background: linear-gradient(135deg,
+        rgba(255, 255, 255, 0.7) 0%,
+        rgba(255, 255, 255, 0.6) 50%,
+        rgba(255, 255, 255, 0.65) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.08),
-      0 1px 1px rgba(255, 255, 255, 0.5) inset,
-      0 -1px 1px rgba(0, 0, 0, 0.05) inset;
+      0 2px 6px rgba(255, 255, 255, 0.6) inset,
+      0 -2px 6px rgba(0, 0, 0, 0.05) inset,
+      0 0 0 1px rgba(255, 255, 255, 0.4) inset;
   }
 
   @media (prefers-color-scheme: dark) {
     .glass-card:hover {
+      background: linear-gradient(135deg,
+          rgba(39, 39, 42, 0.6) 0%,
+          rgba(39, 39, 42, 0.5) 50%,
+          rgba(39, 39, 42, 0.55) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       box-shadow:
         0 12px 40px rgba(0, 0, 0, 0.6),
-        0 1px 1px rgba(255, 255, 255, 0.08) inset,
-        0 -1px 1px rgba(0, 0, 0, 0.3) inset;
+        0 2px 6px rgba(255, 255, 255, 0.1) inset,
+        0 -2px 6px rgba(0, 0, 0, 0.4) inset,
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset;
     }
   }
 
