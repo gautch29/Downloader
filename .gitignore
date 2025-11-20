@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# database (stored outside project in ../downloader-data/)
+*.db
+*.db-shm
+*.db-wal
+sqlite.db
