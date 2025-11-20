@@ -18,8 +18,8 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className="dark">
-            <body className={`${inter.className} min-h-screen bg-black text-foreground antialiased selection:bg-violet-500/30 overflow-x-hidden`}>
+        <html lang="en">
+            <body className={`${inter.className} min-h-screen text-foreground antialiased selection:bg-[#0071E3]/20 dark:selection:bg-[#0A84FF]/20 overflow-x-hidden`}>
                 <I18nProvider>
                     <Header />
                     <main className="relative z-10">
