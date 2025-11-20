@@ -59,47 +59,54 @@ class ZTClientEnhanced {
 
             console.log(`[ZT] Found ${results.length} results`);
 
-            // Group movies by clean title + year (more precise grouping)
-            const movieMap = new Map<string, GroupedMovie>();
-
-            for (const result of results) {
+            // Don't group - ZT titles don't reliably include years
+            // Each quality/language combo is shown as a separate item
+            const movies: GroupedMovie[] = results.map((result) => {
                 const cleanTitle = this.extractCleanTitle(result.title);
                 const year = this.extractYear(result.title);
 
-                // Use title + year as key for more precise grouping
-                const groupKey = year ? `${cleanTitle}-${year}` : cleanTitle;
+                return {
+                    id: result.id,
+                    title: result.title, // Keep full title with quality/language
+                    cleanTitle,
+                    year,
+                    poster: result.image,
+                    qualities: [{
+                        quality: result.quality || 'Unknown',
+                        language: result.language || 'Unknown',
+                        url: result.url,
+                        links: [],
+                        fileSize: undefined
+                    }],
+                    inPlex: false
+                };
+            });
 
-                if (!movieMap.has(groupKey)) {
-                    movieMap.set(groupKey, {
-                        id: result.id,
-                        title: cleanTitle,
-                        cleanTitle,
-                        year,
-                        poster: result.image,
-                        qualities: [],
-                        inPlex: false // Will be checked later
-                    });
-                }
+            console.log(`[ZT] Fetching file sizes for ${movies.length} movies...`);
 
-                const movie = movieMap.get(groupKey)!;
-                movie.qualities.push({
-                    quality: result.quality || 'Unknown',
-                    language: result.language || 'Unknown',
-                    url: result.url,
-                    links: [],
-                    fileSize: undefined // Will be fetched from detail page
-                });
-            }
+            // Fetch file sizes in parallel (limit to first 10 to avoid overwhelming)
+            const moviesToFetch = movies.slice(0, 10);
+            await Promise.all(
+                moviesToFetch.map(async (movie) => {
+                    try {
+                        const fileSize = await this.getFileSize(movie.qualities[0].url);
+                        if (fileSize) {
+                            movie.qualities[0].fileSize = fileSize;
+                        }
+                    } catch (error) {
+                        // Silently fail for individual movies
+                    }
+                })
+            );
 
-            const groupedMovies = Array.from(movieMap.values());
-            console.log(`[ZT] Grouped into ${groupedMovies.length} unique movies`);
+            console.log(`[ZT] Returning ${movies.length} movies`);
 
             // Check Plex for each movie
-            await this.checkPlexStatus(groupedMovies);
+            await this.checkPlexStatus(movies);
 
             return {
-                movies: groupedMovies,
-                total: groupedMovies.length
+                movies,
+                total: movies.length
             };
         } catch (error: any) {
             console.error('[ZT] Search error:', error);
@@ -169,14 +176,17 @@ class ZTClientEnhanced {
             const settings = await getSettings();
 
             if (!settings?.plexUrl || !settings?.plexToken) {
-                // Plex not configured
+                console.log('[ZT] Plex not configured, skipping check');
                 return;
             }
+
+            console.log('[ZT] Checking Plex library...');
 
             // Fetch Plex library
             const baseUrl = settings.plexUrl.replace(/\/$/, '');
             const response = await axios.get(`${baseUrl}/library/sections/all/all`, {
                 params: { 'X-Plex-Token': settings.plexToken },
+                headers: { 'Accept': 'application/xml' },
                 timeout: 5000
             });
 
@@ -187,19 +197,29 @@ class ZTClientEnhanced {
             $('Video[type="movie"]').each((_, element) => {
                 const title = $(element).attr('title');
                 if (title) {
-                    plexTitles.add(title.toLowerCase().trim());
+                    // Normalize title for comparison
+                    const normalized = title.toLowerCase().trim().replace(/[^\w\s]/g, '');
+                    plexTitles.add(normalized);
                 }
             });
 
+            console.log(`[ZT] Found ${plexTitles.size} movies in Plex library`);
+
             // Check each movie against Plex library
             for (const movie of movies) {
-                const movieTitle = movie.cleanTitle.toLowerCase().trim();
-                movie.inPlex = plexTitles.has(movieTitle);
+                // Normalize movie title for comparison
+                const normalized = movie.cleanTitle.toLowerCase().trim().replace(/[^\w\s]/g, '');
+                movie.inPlex = plexTitles.has(normalized);
+
+                if (movie.inPlex) {
+                    console.log(`[ZT] Found in Plex: ${movie.cleanTitle}`);
+                }
             }
 
-            console.log(`[ZT] Checked ${movies.length} movies against Plex library`);
-        } catch (error) {
-            console.error('[ZT] Failed to check Plex status:', error);
+            const inPlexCount = movies.filter(m => m.inPlex).length;
+            console.log(`[ZT] ${inPlexCount} of ${movies.length} movies found in Plex`);
+        } catch (error: any) {
+            console.error('[ZT] Failed to check Plex status:', error.message);
             // Silently fail - Plex check is optional
         }
     }
