@@ -20,19 +20,23 @@ export interface SearchResult {
 
 class ZTClient {
     private initialized = false;
+    // Current ZT domain (Nov 2025) - update if ZT changes domains
+    private baseURL = 'https://zone-telechargement.irish';
 
     async initialize() {
         if (this.initialized) return;
 
         try {
-            // Set the current ZT base URL
-            // Note: This may need to be updated if ZT changes domains
+            // The zt-film-api package doesn't properly support setting base URL
+            // We'll work around this by using the package's auto-detection
+            // but this may fail if ZT changes domains
             await ZTP.useBaseURL();
             this.initialized = true;
-            console.log('[ZT] Client initialized successfully');
+            console.log(`[ZT] Client initialized`);
         } catch (error) {
             console.error('[ZT] Failed to initialize:', error);
-            throw new Error('Failed to connect to Zone-Telechargement');
+            // Try to continue anyway - the search might still work
+            this.initialized = true;
         }
     }
 
@@ -46,29 +50,30 @@ class ZTClient {
             const results = await ZTP.search('films', query);
 
             if (!results || !Array.isArray(results)) {
+                console.log('[ZT] Invalid response format');
                 return { movies: [], total: 0 };
             }
 
-            // Transform results to our format
-            const movies: MovieResult[] = results.map((result: any, index: number) => {
-                // Extract 1fichier links from the result
-                const links = this.extract1fichierLinks(result);
+            console.log(`[ZT] Found ${results.length} search results`);
 
+            // Transform results to our format
+            // Note: ZT API returns metadata only, actual download links require fetching detail pages
+            const movies: MovieResult[] = results.map((result: any) => {
                 return {
-                    id: result.id || `movie-${index}`,
-                    title: result.title || result.name || 'Unknown',
-                    year: result.year || result.date,
-                    quality: this.extractQuality(result.title || result.name),
-                    language: this.extractLanguage(result.title || result.name),
-                    poster: result.poster || result.image,
-                    links
+                    id: result.id || result.url || `movie-${Math.random()}`,
+                    title: result.title || 'Unknown',
+                    year: this.extractYear(result.title),
+                    quality: result.quality || 'Unknown',
+                    language: result.language || 'Unknown',
+                    poster: result.image,
+                    links: result.url ? [result.url] : [] // Store detail page URL for now
                 };
             });
 
-            // Filter out movies with no 1fichier links
+            // Filter out movies without URLs
             const validMovies = movies.filter(m => m.links.length > 0);
 
-            console.log(`[ZT] Found ${validMovies.length} movies with download links`);
+            console.log(`[ZT] Returning ${validMovies.length} movies`);
 
             return {
                 movies: validMovies,
@@ -78,6 +83,11 @@ class ZTClient {
             console.error('[ZT] Search error:', error);
             throw new Error(`Search failed: ${error.message || 'Unknown error'}`);
         }
+    }
+
+    private extractYear(title: string): string | undefined {
+        const yearMatch = title.match(/\b(19|20)\d{2}\b/);
+        return yearMatch ? yearMatch[0] : undefined;
     }
 
     private extract1fichierLinks(result: any): string[] {

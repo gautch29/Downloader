@@ -20,17 +20,21 @@ export function MovieCard({ movie }: MovieCardProps) {
     async function handleDownload(link: string, index: number) {
         setDownloading(true);
         try {
-            const result = await add1fichierDownloadAction(link, movie.title);
+            // Note: For now, links are ZT detail page URLs, not direct 1fichier links
+            // In a future update, we'll fetch the detail page to extract actual download links
 
-            if ('error' in result) {
-                alert(result.error);
-            } else {
-                setDownloadedIndex(index);
-                // Show success feedback
-                setTimeout(() => setDownloadedIndex(null), 3000);
-            }
+            // For now, just open the detail page in a new tab
+            window.open(link, '_blank');
+            setDownloadedIndex(index);
+            setTimeout(() => setDownloadedIndex(null), 3000);
+
+            // TODO: Implement detail page scraping to extract 1fichier links
+            // const result = await add1fichierDownloadAction(link, movie.title);
+            // if ('error' in result) {
+            //     alert(result.error);
+            // }
         } catch (error) {
-            alert('Failed to add download');
+            alert('Failed to open movie page');
         } finally {
             setDownloading(false);
         }
