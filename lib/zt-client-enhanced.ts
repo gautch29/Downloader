@@ -135,27 +135,38 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // ZT uses dl-protect.link to protect download links
-            // Look for dl-protect links
-            $('a[href*="dl-protect.link"]').each((_, element) => {
-                const href = $(element).attr('href');
-                if (href && href.includes('dl-protect.link')) {
-                    links.push(href);
+            // Find the 1fichier section and get download links from it
+            // Look for <b>1fichier</b> and get the parent's download links
+            $('b').each((_, el) => {
+                const text = $(el).text().trim();
+                if (text === '1fichier') {
+                    // Found the 1fichier label, now get download links from parent
+                    const parent = $(el).parent();
+                    parent.find('a[href*="dl-protect.link"]').each((_, link) => {
+                        const href = $(link).attr('href');
+                        const linkText = $(link).text().trim();
+                        // Only get the simple "Télécharger" buttons, not the "en HD" or "PLUS RAPIDE" ones
+                        if (href && linkText === 'Télécharger') {
+                            links.push(href);
+                        }
+                    });
                 }
             });
 
-            // Also check for direct 1fichier links (fallback)
-            $('a[href*="1fichier"]').each((_, element) => {
-                const href = $(element).attr('href');
-                if (href && (href.includes('1fichier.com') || href.includes('1fichier.net'))) {
-                    links.push(href);
-                }
-            });
+            // Fallback: if no 1fichier section found, get all dl-protect links
+            if (links.length === 0) {
+                $('a[href*="dl-protect.link"]').each((_, element) => {
+                    const href = $(element).attr('href');
+                    if (href) {
+                        links.push(href);
+                    }
+                });
+            }
 
             // Remove duplicates
             const uniqueLinks = [...new Set(links)];
 
-            console.log(`[ZT] Found ${uniqueLinks.length} download links (dl-protect or 1fichier)`);
+            console.log(`[ZT] Found ${uniqueLinks.length} 1fichier download links`);
             return uniqueLinks;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch download links:', error.message);
