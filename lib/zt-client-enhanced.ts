@@ -135,60 +135,53 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // Strategy: Find "1fichier" text, then get the next download link after it
-            // This works regardless of HTML structure
+            // Simple approach: Find "1fichier" text, then find the next "Télécharger" link
+            // This is the most reliable way given the varying page structures
 
-            // First, find all elements containing "1fichier" text
             let found1fichier = false;
+
+            // Get all text nodes and links in order
             $('*').each((_, el) => {
-                if (found1fichier) return; // Stop after finding first 1fichier section
+                if (found1fichier && links.length >= 3) return; // Stop after finding 3 links
 
                 const text = $(el).text().trim();
-                // Check if this element contains "1fichier" but not too much other text
-                if (text.includes('1fichier') && text.length < 200) {
-                    const tagName = 'name' in el ? el.name : 'unknown';
-                    console.log(`[ZT] Found 1fichier label in <${tagName}>`);
 
-                    // Get all links after this element in the DOM
-                    const allLinks = $('a[href*="dl-protect.link"]');
-                    const currentIndex = $('*').index(el);
+                // Look for "1fichier" label (exact match or contains)
+                if (!found1fichier && (text === '1fichier' || (text.includes('1fichier') && text.length < 50))) {
+                    console.log(`[ZT] Found 1fichier label`);
+                    found1fichier = true;
+                    return; // Continue to next elements
+                }
 
-                    // Find links that come after this element
-                    allLinks.each((_, link) => {
-                        const linkIndex = $('*').index(link);
-                        if (linkIndex > currentIndex) {
-                            const href = $(link).attr('href');
-                            const linkText = $(link).text().trim();
+                // After finding 1fichier, look for "Télécharger" links
+                if (found1fichier && $(el).is('a')) {
+                    const href = $(el).attr('href');
+                    const linkText = $(el).text().trim();
 
-                            // Take the first few download links after the 1fichier label
-                            if (href && links.length < 5) {
-                                console.log(`[ZT] Found link after 1fichier: "${linkText}" -> ${href}`);
-                                links.push(href);
-                            }
-                        }
-                    });
-
-                    if (links.length > 0) {
-                        found1fichier = true;
+                    if (href && href.includes('dl-protect.link') && linkText === 'Télécharger') {
+                        console.log(`[ZT] Found 1fichier download link: ${href}`);
+                        links.push(href);
                     }
                 }
             });
 
-            // Fallback: if no 1fichier section found, get all dl-protect links
-            if (links.length === 0) {
-                console.log('[ZT] No 1fichier section found, using fallback');
-                $('a[href*="dl-protect.link"]').each((_, element) => {
-                    const href = $(element).attr('href');
-                    if (href) {
-                        links.push(href);
-                    }
-                });
+            // If we found links after 1fichier, return them
+            if (links.length > 0) {
+                console.log(`[ZT] Found ${links.length} 1fichier download links`);
+                return links;
             }
 
-            // Remove duplicates
-            const uniqueLinks = [...new Set(links)];
+            // Fallback: get all dl-protect links
+            console.log('[ZT] No 1fichier section found, using fallback');
+            $('a[href*="dl-protect.link"]').each((_, element) => {
+                const href = $(element).attr('href');
+                if (href) {
+                    links.push(href);
+                }
+            });
 
-            console.log(`[ZT] Found ${uniqueLinks.length} 1fichier download links`);
+            const uniqueLinks = [...new Set(links)];
+            console.log(`[ZT] Found ${uniqueLinks.length} download links (fallback)`);
             return uniqueLinks;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch download links:', error.message);
