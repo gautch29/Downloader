@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Folder, ChevronRight, CornerLeftUp, Loader2 } from 'lucide-react';
+import { Folder, ChevronRight, CornerLeftUp, Loader2, FolderPlus, Plus, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FolderBrowserModalProps {
@@ -26,11 +27,18 @@ export function FolderBrowserModal({ isOpen, onClose, onSelect, initialPath }: F
     const [error, setError] = useState<string | null>(null);
     const [history, setHistory] = useState<string[]>([]);
 
+    // New folder state
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+    const [creatingLoading, setCreatingLoading] = useState(false);
+
     useEffect(() => {
         if (isOpen && initialPath) {
             setCurrentPath(initialPath);
             setHistory([]);
             loadFolders(initialPath);
+            setIsCreatingFolder(false);
+            setNewFolderName('');
         }
     }, [isOpen, initialPath]);
 
@@ -55,9 +63,42 @@ export function FolderBrowserModal({ isOpen, onClose, onSelect, initialPath }: F
         }
     }
 
+    async function handleCreateFolder() {
+        if (!newFolderName.trim()) return;
+
+        setCreatingLoading(true);
+        try {
+            const res = await fetch('/api/paths/create-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    parentPath: currentPath,
+                    folderName: newFolderName.trim()
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to create folder');
+            }
+
+            // Refresh folders
+            await loadFolders(currentPath);
+            setIsCreatingFolder(false);
+            setNewFolderName('');
+
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setCreatingLoading(false);
+        }
+    }
+
     function handleNavigate(path: string) {
         setHistory(prev => [...prev, currentPath]);
         loadFolders(path);
+        setIsCreatingFolder(false);
     }
 
     function handleGoUp() {
@@ -65,6 +106,7 @@ export function FolderBrowserModal({ isOpen, onClose, onSelect, initialPath }: F
             const previousPath = history[history.length - 1];
             setHistory(prev => prev.slice(0, -1));
             loadFolders(previousPath);
+            setIsCreatingFolder(false);
         }
     }
 
@@ -103,7 +145,47 @@ export function FolderBrowserModal({ isOpen, onClose, onSelect, initialPath }: F
                             <CornerLeftUp className="h-4 w-4" />
                             Back
                         </Button>
+
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsCreatingFolder(!isCreatingFolder)}
+                            className="gap-1 text-[#0071E3] dark:text-[#0A84FF]"
+                        >
+                            <FolderPlus className="h-4 w-4" />
+                            New Folder
+                        </Button>
                     </div>
+
+                    {/* New Folder Input */}
+                    {isCreatingFolder && (
+                        <div className="flex items-center gap-2 animate-fade-in-up">
+                            <Input
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                placeholder="Folder name"
+                                className="h-9 text-sm"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                            />
+                            <Button
+                                size="sm"
+                                onClick={handleCreateFolder}
+                                disabled={creatingLoading || !newFolderName.trim()}
+                                className="h-9 w-9 p-0 shrink-0 bg-[#0071E3] hover:bg-[#0077ED]"
+                            >
+                                {creatingLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setIsCreatingFolder(false)}
+                                className="h-9 w-9 p-0 shrink-0"
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Folder List */}
                     <div className="border rounded-lg min-h-[300px] relative bg-white dark:bg-zinc-900">

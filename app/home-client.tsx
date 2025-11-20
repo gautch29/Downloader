@@ -57,9 +57,9 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                             {/* Path and Filename Selection */}
                             <div className="grid gap-3 md:gap-6 md:grid-cols-2 items-start">
                                 <PathSelector shortcuts={pathShortcuts} />
-                                <div className="space-y-1.5">
+                                <div className="space-y-2">
                                     <div className="flex items-center justify-between h-6 md:h-8">
-                                        <label className="text-[10px] md:text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                                        <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                                             {t('download.custom_filename')}
                                         </label>
                                     </div>
