@@ -59,18 +59,15 @@ class ZTClientEnhanced {
 
             console.log(`[ZT] Found ${results.length} results`);
 
-            // Group by movie ID prefix (first 3 digits for stronger grouping)
-            // This groups different qualities of the same movie together
+            // Group by clean title (works well for most cases)
             const movieMap = new Map<string, GroupedMovie>();
 
             for (const result of results) {
                 const cleanTitle = this.extractCleanTitle(result.title);
                 const year = this.extractYear(result.title);
 
-                // Use first 3 digits of ID for stronger grouping
-                // Fallback to clean title if ID is too short
-                const idPrefix = result.id.toString().substring(0, 3);
-                const groupKey = idPrefix.length >= 3 ? idPrefix : cleanTitle;
+                // Use clean title as grouping key
+                const groupKey = cleanTitle;
 
                 if (!movieMap.has(groupKey)) {
                     movieMap.set(groupKey, {
