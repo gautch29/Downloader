@@ -25,7 +25,6 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
 
             {/* Hero / Add Section */}
             <section className="relative animate-fade-in-up">
-                <div className="absolute -inset-1 bg-gradient-to-r from-violet-600 to-fuchsia-600 rounded-[2rem] blur opacity-20"></div>
                 <GlassCard className="relative">
                     <div className="relative z-10 space-y-8">
                         <div className="flex items-center justify-between">
