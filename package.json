@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "init-db": "tsx scripts/init-db.ts",
     "add-user": "tsx scripts/add-user.ts",
     "list-users": "tsx scripts/list-users.ts",
     "delete-user": "tsx scripts/delete-user.ts"
