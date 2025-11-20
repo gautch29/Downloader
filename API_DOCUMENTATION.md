@@ -283,8 +283,7 @@ Get application settings (sensitive data like Plex token is not exposed).
 {
   "settings": {
     "plexUrl": "string",
-    "plexConfigured": boolean,
-    "defaultPath": "string"
+    "plexConfigured": boolean
   }
 }
 ```
@@ -308,8 +307,7 @@ Update application settings.
 ```json
 {
   "plexUrl": "string (optional)",
-  "plexToken": "string (optional)",
-  "defaultPath": "string (optional)"
+  "plexToken": "string (optional)"
 }
 ```
 
@@ -331,8 +329,7 @@ curl -X PUT http://localhost:3000/api/settings \
   -b cookies.txt \
   -d '{
     "plexUrl": "http://192.168.1.100:32400",
-    "plexToken": "your-plex-token",
-    "defaultPath": "/downloads"
+    "plexToken": "your-plex-token"
   }'
 ```
 
