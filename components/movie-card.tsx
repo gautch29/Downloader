@@ -34,7 +34,7 @@ export function MovieCard({ movie }: MovieCardProps) {
         setError(null);
 
         try {
-            // First, fetch the 1fichier links from the detail page
+            // First, fetch the download links from the detail page
             if (downloadLinks.length === 0) {
                 setFetchingLinks(true);
                 const result = await getDownloadLinksAction(selectedQuality.url);
@@ -48,8 +48,19 @@ export function MovieCard({ movie }: MovieCardProps) {
 
                 if (result.links && result.links.length > 0) {
                     setDownloadLinks(result.links);
-                    // Add the first link to download queue
-                    const addResult = await add1fichierDownloadAction(result.links[0], movie.title);
+
+                    // Check if it's a dl-protect link
+                    const firstLink = result.links[0];
+                    if (firstLink.includes('dl-protect.link')) {
+                        // Open dl-protect in new tab - user needs to solve captcha
+                        window.open(firstLink, '_blank');
+                        setError('Please solve the captcha on the opened page, then copy the 1fichier link and paste it in the home page');
+                        setDownloading(false);
+                        return;
+                    }
+
+                    // Direct 1fichier link - add to queue
+                    const addResult = await add1fichierDownloadAction(firstLink, movie.title);
 
                     if ('error' in addResult) {
                         setError(addResult.error || 'Failed to add download');
@@ -58,8 +69,17 @@ export function MovieCard({ movie }: MovieCardProps) {
                     setError('No download links found');
                 }
             } else {
-                // Links already fetched, add to queue
-                const addResult = await add1fichierDownloadAction(downloadLinks[0], movie.title);
+                // Links already fetched
+                const firstLink = downloadLinks[0];
+
+                if (firstLink.includes('dl-protect.link')) {
+                    window.open(firstLink, '_blank');
+                    setError('Please solve the captcha on the opened page, then copy the 1fichier link and paste it in the home page');
+                    setDownloading(false);
+                    return;
+                }
+
+                const addResult = await add1fichierDownloadAction(firstLink, movie.title);
 
                 if ('error' in addResult) {
                     setError(addResult.error || 'Failed to add download');
