@@ -13,10 +13,9 @@ export function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // If has session cookie and on login page, redirect to home
-    if (sessionCookie && isLoginPage) {
-        return NextResponse.redirect(new URL('/', request.url));
-    }
+    // We allow access to /login even if session cookie exists
+    // This handles "zombie cookies" (invalid sessions) where middleware sees a cookie
+    // but the app knows it's invalid. The login page itself will handle valid session redirects.
 
     return NextResponse.next();
 }
