@@ -235,12 +235,38 @@ class ZTClientEnhanced {
 
             console.log('[ZT] Checking Plex library...');
 
-            // Fetch Plex library
+            // Fetch Plex library sections to find the movie section
             const baseUrl = settings.plexUrl.replace(/\/$/, '');
-            const response = await axios.get(`${baseUrl}/library/sections/all/all`, {
+
+            // 1. Get all sections
+            const sectionsResponse = await axios.get(`${baseUrl}/library/sections`, {
                 params: { 'X-Plex-Token': settings.plexToken },
                 headers: { 'Accept': 'application/xml' },
                 timeout: 5000
+            });
+
+            const $sections = cheerio.load(sectionsResponse.data, { xmlMode: true });
+
+            // 2. Find the first section with type="movie"
+            let movieSectionKey: string | null = null;
+            $sections('Directory[type="movie"]').each((_, element) => {
+                if (!movieSectionKey) {
+                    movieSectionKey = $sections(element).attr('key') || null;
+                    const title = $sections(element).attr('title');
+                    console.log(`[ZT] Found Plex movie section: "${title}" (key: ${movieSectionKey})`);
+                }
+            });
+
+            if (!movieSectionKey) {
+                console.log('[ZT] No movie library found in Plex');
+                return;
+            }
+
+            // 3. Fetch all movies from that section
+            const response = await axios.get(`${baseUrl}/library/sections/${movieSectionKey}/all`, {
+                params: { 'X-Plex-Token': settings.plexToken },
+                headers: { 'Accept': 'application/xml' },
+                timeout: 10000 // Increased timeout for large libraries
             });
 
             const $ = cheerio.load(response.data, { xmlMode: true });
