@@ -1,40 +1,72 @@
 'use client';
 
 import { useState } from 'react';
-import { MovieResult } from '@/lib/zt-client';
-import { add1fichierDownloadAction } from '@/app/search/actions';
-import { Download, Film } from 'lucide-react';
+import { GroupedMovie } from '@/lib/zt-client-enhanced';
+import { getDownloadLinksAction, add1fichierDownloadAction } from '../app/search/actions';
+import { Download, Film, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { GlassCard } from './ui/glass-card';
 import { useI18n } from '@/lib/i18n';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from './ui/select';
 
 interface MovieCardProps {
-    movie: MovieResult;
+    movie: GroupedMovie;
 }
 
 export function MovieCard({ movie }: MovieCardProps) {
     const { t } = useI18n();
+    const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
     const [downloading, setDownloading] = useState(false);
-    const [downloadedIndex, setDownloadedIndex] = useState<number | null>(null);
+    const [fetchingLinks, setFetchingLinks] = useState(false);
+    const [downloadLinks, setDownloadLinks] = useState<string[]>([]);
+    const [error, setError] = useState<string | null>(null);
 
-    async function handleDownload(link: string, index: number) {
+    const selectedQuality = movie.qualities[selectedQualityIndex];
+
+    async function handleDownload() {
         setDownloading(true);
+        setError(null);
+
         try {
-            // Note: For now, links are ZT detail page URLs, not direct 1fichier links
-            // In a future update, we'll fetch the detail page to extract actual download links
+            // First, fetch the 1fichier links from the detail page
+            if (downloadLinks.length === 0) {
+                setFetchingLinks(true);
+                const result = await getDownloadLinksAction(selectedQuality.url);
+                setFetchingLinks(false);
 
-            // For now, just open the detail page in a new tab
-            window.open(link, '_blank');
-            setDownloadedIndex(index);
-            setTimeout(() => setDownloadedIndex(null), 3000);
+                if ('error' in result) {
+                    setError(result.error || 'Failed to fetch download links');
+                    setDownloading(false);
+                    return;
+                }
 
-            // TODO: Implement detail page scraping to extract 1fichier links
-            // const result = await add1fichierDownloadAction(link, movie.title);
-            // if ('error' in result) {
-            //     alert(result.error);
-            // }
-        } catch (error) {
-            alert('Failed to open movie page');
+                if (result.links && result.links.length > 0) {
+                    setDownloadLinks(result.links);
+                    // Add the first link to download queue
+                    const addResult = await add1fichierDownloadAction(result.links[0], movie.title);
+
+                    if ('error' in addResult) {
+                        setError(addResult.error || 'Failed to add download');
+                    }
+                } else {
+                    setError('No download links found');
+                }
+            } else {
+                // Links already fetched, add to queue
+                const addResult = await add1fichierDownloadAction(downloadLinks[0], movie.title);
+
+                if ('error' in addResult) {
+                    setError(addResult.error || 'Failed to add download');
+                }
+            }
+        } catch (err) {
+            setError('Failed to process download');
         } finally {
             setDownloading(false);
         }
@@ -61,17 +93,10 @@ export function MovieCard({ movie }: MovieCardProps) {
                     </div>
                 </div>
 
-                {/* Quality Badge */}
-                {movie.quality && movie.quality !== 'Unknown' && (
+                {/* Quality count badge */}
+                {movie.qualities.length > 1 && (
                     <div className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-[#0071E3] dark:bg-[#0A84FF] text-white text-xs font-bold shadow-lg">
-                        {movie.quality}
-                    </div>
-                )}
-
-                {/* Language Badge */}
-                {movie.language && movie.language !== 'Unknown' && (
-                    <div className="absolute top-2 left-2 px-2 py-1 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm text-zinc-900 dark:text-white text-xs font-medium border border-white/40 dark:border-white/10">
-                        {movie.language}
+                        {movie.qualities.length} {t('movie.qualities')}
                     </div>
                 )}
             </div>
@@ -89,49 +114,79 @@ export function MovieCard({ movie }: MovieCardProps) {
                     )}
                 </div>
 
-                {/* Download Buttons */}
-                <div className="space-y-2">
-                    {movie.links.length === 1 ? (
-                        <Button
-                            onClick={() => handleDownload(movie.links[0], 0)}
-                            disabled={downloading}
-                            className="w-full h-9 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white text-sm rounded-xl shadow-sm hover:shadow-md transition-all"
-                        >
-                            {downloadedIndex === 0 ? (
-                                <>✓ {t('movie.added')}</>
-                            ) : (
-                                <>
-                                    <Download className="h-4 w-4 mr-2" />
-                                    {t('movie.download')}
-                                </>
-                            )}
-                        </Button>
+                {/* Quality Selector */}
+                {movie.qualities.length > 1 ? (
+                    <Select
+                        value={selectedQualityIndex.toString()}
+                        onValueChange={(value) => setSelectedQualityIndex(parseInt(value))}
+                    >
+                        <SelectTrigger className="w-full h-9 text-xs bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {movie.qualities.map((quality, index) => (
+                                <SelectItem key={index} value={index.toString()}>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-medium">{quality.quality}</span>
+                                        <span className="text-xs text-zinc-500">{quality.language}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
+                            {selectedQuality.quality}
+                        </span>
+                        <span className="text-zinc-500 dark:text-zinc-400">
+                            {selectedQuality.language}
+                        </span>
+                    </div>
+                )}
+
+                {/* Error Message */}
+                {error && (
+                    <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
+                        {error}
+                    </div>
+                )}
+
+                {/* Download Button */}
+                <Button
+                    onClick={handleDownload}
+                    disabled={downloading || fetchingLinks}
+                    className="w-full h-9 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white text-sm rounded-xl shadow-sm hover:shadow-md transition-all"
+                >
+                    {fetchingLinks ? (
+                        <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {t('movie.fetching')}
+                        </>
+                    ) : downloading ? (
+                        <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {t('movie.adding')}
+                        </>
+                    ) : downloadLinks.length > 0 ? (
+                        <>
+                            <Download className="h-4 w-4 mr-2" />
+                            {t('movie.added')}
+                        </>
                     ) : (
                         <>
-                            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {movie.links.length} {t('movie.links_available')}
-                            </p>
-                            {movie.links.slice(0, 3).map((link, index) => (
-                                <Button
-                                    key={index}
-                                    onClick={() => handleDownload(link, index)}
-                                    disabled={downloading}
-                                    variant="outline"
-                                    className="w-full h-8 text-xs rounded-lg"
-                                >
-                                    {downloadedIndex === index ? (
-                                        <>✓ {t('movie.added')}</>
-                                    ) : (
-                                        <>
-                                            <Download className="h-3 w-3 mr-1.5" />
-                                            {t('movie.link')} {index + 1}
-                                        </>
-                                    )}
-                                </Button>
-                            ))}
+                            <Download className="h-4 w-4 mr-2" />
+                            {t('movie.download')}
                         </>
                     )}
-                </div>
+                </Button>
+
+                {/* Show number of links found */}
+                {downloadLinks.length > 0 && (
+                    <p className="text-xs text-center text-zinc-500 dark:text-zinc-400">
+                        {downloadLinks.length} {t('movie.links_found')}
+                    </p>
+                )}
             </div>
         </GlassCard>
     );

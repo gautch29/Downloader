@@ -1,6 +1,6 @@
 'use server';
 
-import { ztClient, type SearchResult } from '@/lib/zt-client';
+import { ztClientEnhanced, type SearchResult } from '@/lib/zt-client-enhanced';
 import { revalidatePath } from 'next/cache';
 
 export async function searchMoviesAction(query: string): Promise<SearchResult | { error: string }> {
@@ -9,11 +9,26 @@ export async function searchMoviesAction(query: string): Promise<SearchResult | 
             return { error: 'Search query must be at least 2 characters' };
         }
 
-        const results = await ztClient.searchMovies(query.trim());
+        const results = await ztClientEnhanced.searchMovies(query.trim());
         return results;
     } catch (error: any) {
         console.error('[searchMoviesAction] Error:', error);
         return { error: error.message || 'Failed to search movies' };
+    }
+}
+
+export async function getDownloadLinksAction(detailPageUrl: string): Promise<{ links?: string[]; error?: string }> {
+    try {
+        const links = await ztClientEnhanced.getDownloadLinks(detailPageUrl);
+
+        if (links.length === 0) {
+            return { error: 'No 1fichier links found on this page' };
+        }
+
+        return { links };
+    } catch (error: any) {
+        console.error('[getDownloadLinksAction] Error:', error);
+        return { error: error.message || 'Failed to fetch download links' };
     }
 }
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { searchMoviesAction } from './actions';
-import { MovieResult } from '@/lib/zt-client';
+import { GroupedMovie } from '@/lib/zt-client-enhanced';
 import { MovieCard } from '@/components/movie-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { useI18n } from '@/lib/i18n';
 export function SearchClient() {
     const { t } = useI18n();
     const [query, setQuery] = useState('');
-    const [movies, setMovies] = useState<MovieResult[]>([]);
+    const [movies, setMovies] = useState<GroupedMovie[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [searched, setSearched] = useState(false);
