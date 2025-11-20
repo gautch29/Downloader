@@ -338,6 +338,88 @@ curl -X PUT http://localhost:3000/api/settings \
 
 ---
 
+### 5. Movie Search
+
+#### GET `/api/movies/search?q={query}`
+Search for movies on Zone-Telechargement.
+
+**Query Parameters:**
+- `q` (required): Search query
+
+**Response (200 OK):**
+```json
+{
+  "movies": [
+    {
+      "id": "string",
+      "title": "string",
+      "cleanTitle": "string",
+      "year": "string",
+      "poster": "string",
+      "inPlex": boolean,
+      "qualities": [
+        {
+          "quality": "string (e.g., '1080p', '720p')",
+          "language": "string (e.g., 'FRENCH', 'MULTI')",
+          "url": "string (detail page URL)",
+          "fileSize": "string (e.g., '1.5 GB')",
+          "links": []
+        }
+      ]
+    }
+  ],
+  "total": number
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Missing query parameter
+- `401 Unauthorized`: Not authenticated
+- `500 Internal Server Error`: Server error
+
+**Example:**
+```bash
+curl "http://localhost:3000/api/movies/search?q=Avatar" \
+  -b cookies.txt
+```
+
+---
+
+#### POST `/api/movies/links`
+Get 1fichier download links from a movie detail page.
+
+**Request Body:**
+```json
+{
+  "url": "string (required - detail page URL)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "links": [
+    "https://dl-protect.link/...",
+    "https://dl-protect.link/..."
+  ]
+}
+```
+
+**Error Responses:**
+- `400 Bad Request`: Missing URL
+- `401 Unauthorized`: Not authenticated
+- `500 Internal Server Error`: Server error
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/movies/links \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"url":"https://zone-telechargement.irish?p=film&id=12862-joker"}'
+```
+
+---
+
 ## Error Handling
 
 All endpoints follow a consistent error response format:

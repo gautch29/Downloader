@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings, Plus, Trash2 } from 'lucide-react';
-import { addPathShortcutAction, deletePathShortcutAction } from '@/app/paths/actions';
+import { addPathShortcutAction, deletePathShortcutAction, getPathShortcutsAction } from '@/app/paths/actions';
 import type { PathShortcut } from '@/lib/path-config';
 import { useI18n } from '@/lib/i18n';
 
@@ -13,18 +13,33 @@ interface PathShortcutsModalProps {
     shortcuts: PathShortcut[];
 }
 
-export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
+export function PathShortcutsModal({ shortcuts: initialShortcuts }: PathShortcutsModalProps) {
     const { t } = useI18n();
     const [open, setOpen] = useState(false);
+    const [shortcuts, setShortcuts] = useState(initialShortcuts);
+
+    // Refresh shortcuts when modal opens
+    useEffect(() => {
+        if (open) {
+            getPathShortcutsAction().then(setShortcuts);
+        }
+    }, [open]);
 
     async function handleAdd(formData: FormData) {
         await addPathShortcutAction(formData);
-        setOpen(false);
+        // Refresh the list
+        const updated = await getPathShortcutsAction();
+        setShortcuts(updated);
+        // Clear form
+        (document.querySelector('form[data-path-form]') as HTMLFormElement)?.reset();
     }
 
     async function handleDelete(id: string) {
         if (confirm(t('paths.delete.confirm'))) {
             await deletePathShortcutAction(id);
+            // Refresh the list immediately
+            const updated = await getPathShortcutsAction();
+            setShortcuts(updated);
         }
     }
 
@@ -70,7 +85,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                                     >
                                         <div className="flex items-center gap-3 overflow-hidden">
                                             <div className="h-8 w-8 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center text-zinc-400 dark:text-zinc-300 shadow-sm">
-                                                <Plus className="h-4 w-4" /> {/* Replaced with a generic icon as Folder was not imported */}
+                                                <Plus className="h-4 w-4" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium text-sm text-zinc-700 dark:text-zinc-200 truncate">{shortcut.name}</p>
@@ -97,7 +112,7 @@ export function PathShortcutsModal({ shortcuts }: PathShortcutsModalProps) {
                     {/* Add New Shortcut */}
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-200">{t('paths.add.title')}</h3>
-                        <form action={handleAdd} className="space-y-3">
+                        <form action={handleAdd} data-path-form className="space-y-3">
                             <div>
                                 <label className="text-xs text-zinc-500 dark:text-zinc-400 mb-1 block">{t('paths.add.name')}</label>
                                 <Input

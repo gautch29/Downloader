@@ -26,7 +26,7 @@ export async function loginAction(formData: FormData) {
     const sessionId = await createSession(user.id);
     await setSession(sessionId);
 
-    redirect('/');
+    return { success: true };
 }
 
 export async function logoutAction() {

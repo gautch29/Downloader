@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { loginAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Download, Lock, User } from 'lucide-react';
 export function LoginForm() {
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
@@ -19,6 +21,10 @@ export function LoginForm() {
         if (result?.error) {
             setError(result.error);
             setLoading(false);
+        } else {
+            // Redirect to home page on successful login
+            router.push('/');
+            router.refresh();
         }
     }
 
