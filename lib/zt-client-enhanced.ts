@@ -59,33 +59,48 @@ class ZTClientEnhanced {
 
             console.log(`[ZT] Found ${results.length} results`);
 
-            // Don't group - ZT titles don't reliably include years
-            // Each quality/language combo is shown as a separate item
-            const movies: GroupedMovie[] = results.map((result) => {
+            // Group by movie ID prefix (first few digits usually indicate same movie)
+            // This groups different qualities of the same movie together
+            const movieMap = new Map<string, GroupedMovie>();
+
+            for (const result of results) {
                 const cleanTitle = this.extractCleanTitle(result.title);
                 const year = this.extractYear(result.title);
 
-                return {
-                    id: result.id,
-                    title: result.title, // Keep full title with quality/language
-                    cleanTitle,
-                    year,
-                    poster: result.image,
-                    qualities: [{
-                        quality: result.quality || 'Unknown',
-                        language: result.language || 'Unknown',
-                        url: result.url,
-                        links: [],
-                        fileSize: undefined
-                    }],
-                    inPlex: false
-                };
-            });
+                // Use first 4 digits of ID as grouping key (usually same movie)
+                // Fallback to clean title if ID is too short
+                const idPrefix = result.id.toString().substring(0, 4);
+                const groupKey = idPrefix.length >= 4 ? idPrefix : cleanTitle;
 
-            console.log(`[ZT] Fetching file sizes for ${movies.length} movies...`);
+                if (!movieMap.has(groupKey)) {
+                    movieMap.set(groupKey, {
+                        id: result.id,
+                        title: cleanTitle,
+                        cleanTitle,
+                        year,
+                        poster: result.image,
+                        qualities: [],
+                        inPlex: false
+                    });
+                }
 
-            // Fetch file sizes in parallel (limit to first 10 to avoid overwhelming)
-            const moviesToFetch = movies.slice(0, 10);
+                const movie = movieMap.get(groupKey)!;
+                movie.qualities.push({
+                    quality: result.quality || 'Unknown',
+                    language: result.language || 'Unknown',
+                    url: result.url,
+                    links: [],
+                    fileSize: undefined
+                });
+            }
+
+            const groupedMovies = Array.from(movieMap.values());
+            console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} movies`);
+
+            // Fetch file sizes for first quality of each movie (limit to 10)
+            const moviesToFetch = groupedMovies.slice(0, 10);
+            console.log(`[ZT] Fetching file sizes for ${moviesToFetch.length} movies...`);
+
             await Promise.all(
                 moviesToFetch.map(async (movie) => {
                     try {
@@ -99,14 +114,12 @@ class ZTClientEnhanced {
                 })
             );
 
-            console.log(`[ZT] Returning ${movies.length} movies`);
-
             // Check Plex for each movie
-            await this.checkPlexStatus(movies);
+            await this.checkPlexStatus(groupedMovies);
 
             return {
-                movies,
-                total: movies.length
+                movies: groupedMovies,
+                total: groupedMovies.length
             };
         } catch (error: any) {
             console.error('[ZT] Search error:', error);
@@ -158,10 +171,18 @@ class ZTClientEnhanced {
             // Look for file size in common patterns
             const pageText = $.text();
 
-            // Common patterns: "1.5 GB", "750 MB", "2.3Go", etc.
-            const sizeMatch = pageText.match(/(\d+\.?\d*)\s*(GB|MB|Go|Mo|TB|To)/i);
+            // Match file sizes with word boundaries and proper spacing
+            // Avoid matching things like "9tB" in JavaScript
+            const sizeMatch = pageText.match(/\b(\d+\.?\d*)\s+(GB|Go|MB|Mo|TB|To)\b/i);
             if (sizeMatch) {
-                return `${sizeMatch[1]} ${sizeMatch[2].toUpperCase()}`;
+                const size = parseFloat(sizeMatch[1]);
+                const unit = sizeMatch[2].toUpperCase().replace('O', 'B'); // Normalize Go -> GB
+
+                // Sanity check: reject unrealistic sizes
+                if (unit.includes('TB') && size > 20) return undefined; // > 20TB is suspicious
+                if (unit.includes('GB') && size > 50) return undefined; // > 50GB is suspicious for a single movie
+
+                return `${sizeMatch[1]} ${unit}`;
             }
 
             return undefined;
