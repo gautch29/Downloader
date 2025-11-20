@@ -271,14 +271,21 @@ class ZTClientEnhanced {
 
             const $ = cheerio.load(response.data, { xmlMode: true });
 
+            // Helper for robust normalization
+            const normalize = (str: string) => {
+                return str
+                    .toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                    .replace(/[^a-z0-9]/g, "") // Remove EVERYTHING except alphanumeric
+                    .trim();
+            };
+
             // Extract all movie titles from Plex
             const plexTitles = new Set<string>();
             $('Video[type="movie"]').each((_, element) => {
                 const title = $(element).attr('title');
                 if (title) {
-                    // Normalize title for comparison
-                    const normalized = title.toLowerCase().trim().replace(/[^\w\s]/g, '');
-                    plexTitles.add(normalized);
+                    plexTitles.add(normalize(title));
                 }
             });
 
@@ -286,8 +293,7 @@ class ZTClientEnhanced {
 
             // Check each movie against Plex library
             for (const movie of movies) {
-                // Normalize movie title for comparison
-                const normalized = movie.cleanTitle.toLowerCase().trim().replace(/[^\w\s]/g, '');
+                const normalized = normalize(movie.cleanTitle);
                 movie.inPlex = plexTitles.has(normalized);
 
                 if (movie.inPlex) {
