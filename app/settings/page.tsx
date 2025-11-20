@@ -219,7 +219,7 @@ export default function SettingsPage() {
                     <Button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-12 bg-fuchsia-600 hover:bg-fuchsia-700 text-white rounded-xl shadow-lg shadow-fuchsia-500/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                        className="w-full h-12 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-xl shadow-sm hover:shadow-md transition-all hover:scale-[1.01] active:scale-[0.99]"
                     >
                         {loading ? 'Saving...' : t('settings.password.save')}
                     </Button>

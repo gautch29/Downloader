@@ -56,12 +56,14 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                             </div>
 
                             {/* Path and Filename Selection */}
-                            <div className="grid gap-6 md:grid-cols-2">
+                            <div className="grid gap-6 md:grid-cols-2 items-start">
                                 <PathSelector shortcuts={pathShortcuts} />
-                                <div>
-                                    <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 block uppercase tracking-wider">
-                                        {t('download.custom_filename')}
-                                    </label>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between h-8"> {/* Match height of PathSelector label row */}
+                                        <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                                            {t('download.custom_filename')}
+                                        </label>
+                                    </div>
                                     <Input
                                         name="customFilename"
                                         placeholder="e.g., my-video.mkv"
