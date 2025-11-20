@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
-import { Activity, LogOut, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { Activity, LogOut, Settings, Menu, X } from 'lucide-react';
 import { logoutAction } from '@/app/login/actions';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { LanguageToggle } from './language-toggle';
+import { cn } from '@/lib/utils';
 
 interface HeaderClientProps {
     username: string;
@@ -14,24 +15,25 @@ interface HeaderClientProps {
 
 export function HeaderClient({ username }: HeaderClientProps) {
     const { t } = useI18n();
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/20 backdrop-blur-xl">
-            <div className="container mx-auto flex h-20 items-center justify-between px-6">
+            <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-4 md:px-6">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#409CFF] flex items-center justify-center shadow-sm">
                             <span className="text-white font-bold text-lg tracking-tighter">dl</span>
                         </div>
-                        <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-white">
+                        <span className="font-semibold text-lg tracking-tight text-zinc-900 dark:text-white hidden md:inline-block">
                             dl.flgr.fr
                         </span>
                     </div>
 
-                    <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="hidden md:block h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-                    {/* Navigation Links */}
-                    <nav className="flex items-center gap-2">
+                    {/* Desktop Navigation Links */}
+                    <nav className="hidden md:flex items-center gap-2">
                         <Link
                             href="/"
                             className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
@@ -46,9 +48,9 @@ export function HeaderClient({ username }: HeaderClientProps) {
                         </Link>
                     </nav>
 
-                    <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+                    <div className="hidden md:block h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
 
-                    <div className="flex items-center gap-3 bg-white/50 dark:bg-zinc-800/50 rounded-full px-4 py-1.5 border border-white/40 dark:border-white/10 shadow-sm">
+                    <div className="hidden md:flex items-center gap-3 bg-white/50 dark:bg-zinc-800/50 rounded-full px-4 py-1.5 border border-white/40 dark:border-white/10 shadow-sm">
                         <Activity className="h-3.5 w-3.5 text-[#0071E3] dark:text-[#0A84FF]" />
                         <span className="text-xs font-medium uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
                             {username}
@@ -56,7 +58,8 @@ export function HeaderClient({ username }: HeaderClientProps) {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Desktop Actions */}
+                <div className="hidden md:flex items-center gap-2">
                     <LanguageToggle />
 
                     <Link href="/settings">
@@ -82,7 +85,72 @@ export function HeaderClient({ username }: HeaderClientProps) {
                         </Button>
                     </form>
                 </div>
+
+                {/* Mobile Menu Toggle */}
+                <div className="flex md:hidden items-center gap-2">
+                    <LanguageToggle />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="text-zinc-700 dark:text-zinc-300"
+                    >
+                        {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                    </Button>
+                </div>
             </div>
+
+            {/* Mobile Menu Drawer */}
+            {isMobileMenuOpen && (
+                <div className="md:hidden absolute top-16 left-0 w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 p-4 shadow-xl animate-in slide-in-from-top-5">
+                    <nav className="flex flex-col space-y-4">
+                        <div className="flex items-center gap-3 px-2 py-2 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg">
+                            <Activity className="h-4 w-4 text-[#0071E3] dark:text-[#0A84FF]" />
+                            <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                                {username}
+                            </span>
+                        </div>
+
+                        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+                        <Link
+                            href="/"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center px-4 py-3 rounded-xl text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        >
+                            {t('nav.home')}
+                        </Link>
+                        <Link
+                            href="/search"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center px-4 py-3 rounded-xl text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        >
+                            {t('nav.search')}
+                        </Link>
+                        <Link
+                            href="/settings"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="flex items-center px-4 py-3 rounded-xl text-base font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+                        >
+                            <Settings className="h-4 w-4 mr-3" />
+                            {t('nav.settings')}
+                        </Link>
+
+                        <div className="h-px bg-zinc-200 dark:bg-zinc-800" />
+
+                        <form action={logoutAction} className="w-full">
+                            <Button
+                                type="submit"
+                                variant="ghost"
+                                className="w-full justify-start px-4 py-3 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl"
+                            >
+                                <LogOut className="h-4 w-4 mr-3" />
+                                {t('nav.logout')}
+                            </Button>
+                        </form>
+                    </nav>
+                </div>
+            )}
         </header>
     );
 }

@@ -48,23 +48,23 @@ export function SearchClient() {
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-7xl space-y-8">
+        <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6 md:space-y-8">
             {/* Header */}
-            <div className="text-center space-y-4 animate-fade-in-up">
+            <div className="text-center space-y-3 md:space-y-4 animate-fade-in-up">
                 <div className="flex items-center justify-center gap-3">
-                    <Film className="h-8 w-8 text-[#0071E3] dark:text-[#0A84FF]" />
-                    <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
+                    <Film className="h-6 w-6 md:h-8 md:w-8 text-[#0071E3] dark:text-[#0A84FF]" />
+                    <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-white">
                         {t('search.title')}
                     </h1>
                 </div>
-                <p className="text-zinc-500 dark:text-zinc-400 text-lg">
+                <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-lg">
                     {t('search.subtitle')}
                 </p>
             </div>
 
             {/* Search Bar */}
             <GlassCard className="animate-fade-in-up delay-100">
-                <form onSubmit={handleSearch} className="flex gap-3 p-6">
+                <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3 p-4 md:p-6">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
                         <Input
@@ -72,14 +72,14 @@ export function SearchClient() {
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             placeholder={t('search.placeholder')}
-                            className="pl-12 h-14 text-lg bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400"
+                            className="pl-12 h-12 md:h-14 text-base md:text-lg bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400"
                             disabled={loading}
                         />
                     </div>
                     <Button
                         type="submit"
                         disabled={loading || !query.trim()}
-                        className="h-14 px-8 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-2xl shadow-sm hover:shadow-md transition-all"
+                        className="h-12 md:h-14 px-8 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-2xl shadow-sm hover:shadow-md transition-all w-full md:w-auto"
                     >
                         {loading ? (
                             <>
@@ -105,9 +105,9 @@ export function SearchClient() {
 
             {/* Results */}
             {searched && !loading && !error && movies.length > 0 && (
-                <div className="space-y-6 animate-fade-in-up delay-200">
+                <div className="space-y-4 md:space-y-6 animate-fade-in-up delay-200">
                     <div className="flex items-center justify-between px-2">
-                        <h2 className="text-xl font-semibold text-zinc-900 dark:text-white">
+                        <h2 className="text-lg md:text-xl font-semibold text-zinc-900 dark:text-white">
                             {t('search.results')}
                         </h2>
                         <span className="px-3 py-1 rounded-full bg-white/50 dark:bg-zinc-800/50 border border-white/40 dark:border-zinc-700/40 text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -115,7 +115,7 @@ export function SearchClient() {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                         {movies.map((movie) => (
                             <MovieCard key={movie.id} movie={movie} />
                         ))}
@@ -125,9 +125,9 @@ export function SearchClient() {
 
             {/* Empty State */}
             {!searched && !loading && (
-                <div className="text-center py-20 animate-fade-in-up delay-200">
-                    <div className="mb-6 rounded-full bg-white/50 dark:bg-zinc-800/50 p-8 ring-1 ring-zinc-200 dark:ring-zinc-700 shadow-sm inline-block">
-                        <Film className="h-16 w-16 text-zinc-400 dark:text-zinc-500" />
+                <div className="text-center py-12 md:py-20 animate-fade-in-up delay-200">
+                    <div className="mb-6 rounded-full bg-white/50 dark:bg-zinc-800/50 p-6 md:p-8 ring-1 ring-zinc-200 dark:ring-zinc-700 shadow-sm inline-block">
+                        <Film className="h-12 w-12 md:h-16 md:w-16 text-zinc-400 dark:text-zinc-500" />
                     </div>
                     <p className="text-zinc-600 dark:text-zinc-300 font-medium text-lg">
                         {t('search.empty.title')}
