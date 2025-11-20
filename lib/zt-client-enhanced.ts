@@ -59,7 +59,7 @@ class ZTClientEnhanced {
 
             console.log(`[ZT] Found ${results.length} results`);
 
-            // Group by movie ID prefix (first few digits usually indicate same movie)
+            // Group by movie ID prefix (first 3 digits for stronger grouping)
             // This groups different qualities of the same movie together
             const movieMap = new Map<string, GroupedMovie>();
 
@@ -67,10 +67,10 @@ class ZTClientEnhanced {
                 const cleanTitle = this.extractCleanTitle(result.title);
                 const year = this.extractYear(result.title);
 
-                // Use first 4 digits of ID as grouping key (usually same movie)
+                // Use first 3 digits of ID for stronger grouping
                 // Fallback to clean title if ID is too short
-                const idPrefix = result.id.toString().substring(0, 4);
-                const groupKey = idPrefix.length >= 4 ? idPrefix : cleanTitle;
+                const idPrefix = result.id.toString().substring(0, 3);
+                const groupKey = idPrefix.length >= 3 ? idPrefix : cleanTitle;
 
                 if (!movieMap.has(groupKey)) {
                     movieMap.set(groupKey, {
@@ -97,21 +97,23 @@ class ZTClientEnhanced {
             const groupedMovies = Array.from(movieMap.values());
             console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} movies`);
 
-            // Fetch file sizes for first quality of each movie (limit to 10)
+            // Fetch file sizes for ALL qualities of first 10 movies
             const moviesToFetch = groupedMovies.slice(0, 10);
             console.log(`[ZT] Fetching file sizes for ${moviesToFetch.length} movies...`);
 
             await Promise.all(
-                moviesToFetch.map(async (movie) => {
-                    try {
-                        const fileSize = await this.getFileSize(movie.qualities[0].url);
-                        if (fileSize) {
-                            movie.qualities[0].fileSize = fileSize;
+                moviesToFetch.flatMap((movie) =>
+                    movie.qualities.map(async (quality) => {
+                        try {
+                            const fileSize = await this.getFileSize(quality.url);
+                            if (fileSize) {
+                                quality.fileSize = fileSize;
+                            }
+                        } catch (error) {
+                            // Silently fail for individual qualities
                         }
-                    } catch (error) {
-                        // Silently fail for individual movies
-                    }
-                })
+                    })
+                )
             );
 
             // Check Plex for each movie
