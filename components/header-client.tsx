@@ -18,7 +18,7 @@ export function HeaderClient({ username }: HeaderClientProps) {
     return (
         <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-black/20 backdrop-blur-xl">
             <div className="container mx-auto flex h-20 items-center justify-between px-6">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-[#0071E3] to-[#409CFF] flex items-center justify-center shadow-sm">
                             <span className="text-white font-bold text-lg tracking-tighter">dl</span>
@@ -27,6 +27,24 @@ export function HeaderClient({ username }: HeaderClientProps) {
                             dl.flgr.fr
                         </span>
                     </div>
+
+                    <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
+
+                    {/* Navigation Links */}
+                    <nav className="flex items-center gap-2">
+                        <Link
+                            href="/"
+                            className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                        >
+                            {t('nav.home')}
+                        </Link>
+                        <Link
+                            href="/search"
+                            className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                        >
+                            {t('nav.search')}
+                        </Link>
+                    </nav>
 
                     <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-700" />
 
