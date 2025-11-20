@@ -135,26 +135,48 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // Find the 1fichier section and get download links from it
-            // Look for <b>1fichier</b> and get the parent's download links
-            $('b').each((_, el) => {
+            // Strategy: Find "1fichier" text, then get the next download link after it
+            // This works regardless of HTML structure
+
+            // First, find all elements containing "1fichier" text
+            let found1fichier = false;
+            $('*').each((_, el) => {
+                if (found1fichier) return; // Stop after finding first 1fichier section
+
                 const text = $(el).text().trim();
-                if (text === '1fichier') {
-                    // Found the 1fichier label, now get download links from parent
-                    const parent = $(el).parent();
-                    parent.find('a[href*="dl-protect.link"]').each((_, link) => {
-                        const href = $(link).attr('href');
-                        const linkText = $(link).text().trim();
-                        // Only get the simple "Télécharger" buttons, not the "en HD" or "PLUS RAPIDE" ones
-                        if (href && linkText === 'Télécharger') {
-                            links.push(href);
+                // Check if this element contains "1fichier" but not too much other text
+                if (text.includes('1fichier') && text.length < 200) {
+                    const tagName = 'name' in el ? el.name : 'unknown';
+                    console.log(`[ZT] Found 1fichier label in <${tagName}>`);
+
+                    // Get all links after this element in the DOM
+                    const allLinks = $('a[href*="dl-protect.link"]');
+                    const currentIndex = $('*').index(el);
+
+                    // Find links that come after this element
+                    allLinks.each((_, link) => {
+                        const linkIndex = $('*').index(link);
+                        if (linkIndex > currentIndex) {
+                            const href = $(link).attr('href');
+                            const linkText = $(link).text().trim();
+
+                            // Take the first few download links after the 1fichier label
+                            if (href && links.length < 5) {
+                                console.log(`[ZT] Found link after 1fichier: "${linkText}" -> ${href}`);
+                                links.push(href);
+                            }
                         }
                     });
+
+                    if (links.length > 0) {
+                        found1fichier = true;
+                    }
                 }
             });
 
             // Fallback: if no 1fichier section found, get all dl-protect links
             if (links.length === 0) {
+                console.log('[ZT] No 1fichier section found, using fallback');
                 $('a[href*="dl-protect.link"]').each((_, element) => {
                     const href = $(element).attr('href');
                     if (href) {
