@@ -30,7 +30,7 @@ const translations: Translations = {
         'search.empty.title': 'Start searching for movies',
         'search.empty.subtitle': 'Enter a movie title above to find downloads',
         'movie.download': 'Download',
-        'movie.get_link': 'Get Download Link',
+        'movie.get_link': 'Get Link',
         'movie.added': 'Added to queue',
         'movie.fetching': 'Fetching links...',
         'movie.adding': 'Adding...',
