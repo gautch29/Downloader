@@ -114,11 +114,11 @@
   .glass-card {
     @apply backdrop-blur-3xl rounded-3xl transition-all duration-300 relative overflow-hidden;
 
-    /* Base glass with subtle gradient for diffraction effect */
+    /* Base glass with subtle gradient and blue tint for visibility */
     background: linear-gradient(135deg,
         rgba(255, 255, 255, 0.6) 0%,
-        rgba(255, 255, 255, 0.5) 50%,
-        rgba(255, 255, 255, 0.55) 100%);
+        rgba(240, 248, 255, 0.55) 50%,
+        rgba(245, 250, 255, 0.58) 100%);
 
     /* Multi-layer border for glass edge refraction */
     border: 1px solid rgba(255, 255, 255, 0.6);
@@ -150,8 +150,8 @@
     .glass-card {
       background: linear-gradient(135deg,
           rgba(39, 39, 42, 0.5) 0%,
-          rgba(39, 39, 42, 0.4) 50%,
-          rgba(39, 39, 42, 0.45) 100%);
+          rgba(30, 35, 45, 0.45) 50%,
+          rgba(35, 38, 48, 0.48) 100%);
       border: 1px solid rgba(255, 255, 255, 0.12);
       box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.4),
@@ -171,8 +171,8 @@
     @apply transform scale-[1.005];
     background: linear-gradient(135deg,
         rgba(255, 255, 255, 0.7) 0%,
-        rgba(255, 255, 255, 0.6) 50%,
-        rgba(255, 255, 255, 0.65) 100%);
+        rgba(235, 245, 255, 0.65) 50%,
+        rgba(240, 248, 255, 0.68) 100%);
     border: 1px solid rgba(255, 255, 255, 0.7);
     box-shadow:
       0 12px 40px rgba(0, 0, 0, 0.08),
