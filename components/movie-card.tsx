@@ -163,7 +163,7 @@ export function MovieCard({ movie }: MovieCardProps) {
                 <Button
                     onClick={handleDownload}
                     disabled={downloading || fetchingLinks}
-                    className="w-full h-9 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white text-xs font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
+                    className="w-full h-10 md:h-9 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white text-sm md:text-xs font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
                 >
                     {fetchingLinks ? (
                         <>

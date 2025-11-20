@@ -49,52 +49,55 @@ export function SearchClient() {
 
     return (
         <div className="container mx-auto p-4 md:p-6 max-w-7xl space-y-6 md:space-y-8">
-            {/* Header */}
-            <div className="text-center space-y-3 md:space-y-4 animate-fade-in-up">
-                <div className="flex items-center justify-center gap-3">
+            {/* Header - Hidden on mobile when scrolling (optional, but keeping simple for now) */}
+            <div className="text-center space-y-2 md:space-y-4 animate-fade-in-up pt-4 md:pt-0">
+                <div className="flex items-center justify-center gap-2 md:gap-3">
                     <Film className="h-6 w-6 md:h-8 md:w-8 text-[#0071E3] dark:text-[#0A84FF]" />
-                    <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-white">
+                    <h1 className="text-xl md:text-3xl font-bold text-zinc-900 dark:text-white">
                         {t('search.title')}
                     </h1>
                 </div>
-                <p className="text-zinc-500 dark:text-zinc-400 text-base md:text-lg">
+                <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-lg hidden md:block">
                     {t('search.subtitle')}
                 </p>
             </div>
 
-            {/* Search Bar */}
-            <GlassCard className="animate-fade-in-up delay-100">
-                <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-3 p-4 md:p-6">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-400" />
-                        <Input
-                            type="text"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder={t('search.placeholder')}
-                            className="pl-12 h-12 md:h-14 text-base md:text-lg bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400"
-                            disabled={loading}
-                        />
-                    </div>
-                    <Button
-                        type="submit"
-                        disabled={loading || !query.trim()}
-                        className="h-12 md:h-14 px-8 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-2xl shadow-sm hover:shadow-md transition-all w-full md:w-auto"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                                {t('search.searching')}
-                            </>
-                        ) : (
-                            <>
-                                <Search className="h-5 w-5 mr-2" />
-                                {t('search.button')}
-                            </>
-                        )}
-                    </Button>
-                </form>
-            </GlassCard>
+            {/* Search Bar - Sticky on Mobile */}
+            <div className="sticky top-[64px] z-30 -mx-4 px-4 md:static md:mx-0 md:px-0 md:z-auto">
+                <GlassCard className="animate-fade-in-up delay-100 shadow-lg md:shadow-sm backdrop-blur-xl bg-white/90 dark:bg-zinc-900/90 md:bg-white/60 md:dark:bg-zinc-900/60">
+                    <form onSubmit={handleSearch} className="flex gap-2 p-3 md:p-6">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-zinc-400" />
+                            <Input
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={t('search.placeholder')}
+                                className="pl-10 h-10 md:h-14 text-base md:text-lg bg-zinc-100/50 dark:bg-zinc-800/50 md:bg-white/80 md:dark:bg-zinc-800/80 border-transparent md:border-zinc-200 md:dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-800 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl md:rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 transition-all"
+                                disabled={loading}
+                            />
+                        </div>
+                        <Button
+                            type="submit"
+                            disabled={loading || !query.trim()}
+                            size="icon"
+                            className="h-10 w-10 md:h-14 md:w-auto md:px-8 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all shrink-0"
+                        >
+                            {loading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Search className="h-5 w-5 md:hidden" />
+                                    <span className="hidden md:flex items-center">
+                                        <Search className="h-5 w-5 mr-2" />
+                                        {t('search.button')}
+                                    </span>
+                                </>
+                            )}
+                        </Button>
+                    </form>
+                </GlassCard>
+            </div>
 
             {/* Error Message */}
             {error && (
