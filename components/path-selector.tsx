@@ -44,14 +44,16 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
                             <span>{t('download.path.default')}</span>
                         </div>
                     </SelectItem>
-                    {shortcuts.map((shortcut) => (
-                        <SelectItem key={shortcut.id} value={shortcut.path} className="text-zinc-900 dark:text-white focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:text-zinc-900 dark:focus:text-white cursor-pointer rounded-lg my-1">
-                            <div className="flex items-center gap-2">
-                                <Folder className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
-                                <span className="truncate max-w-[200px]">{shortcut.name}</span>
-                            </div>
-                        </SelectItem>
-                    ))}
+                    {shortcuts
+                        .filter(s => s.id !== 'downloads' && s.path)
+                        .map((shortcut) => (
+                            <SelectItem key={shortcut.id} value={shortcut.path} className="text-zinc-900 dark:text-white focus:bg-zinc-100 dark:focus:bg-zinc-800 focus:text-zinc-900 dark:focus:text-white cursor-pointer rounded-lg my-1">
+                                <div className="flex items-center gap-2">
+                                    <Folder className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+                                    <span className="truncate max-w-[200px]">{shortcut.name}</span>
+                                </div>
+                            </SelectItem>
+                        ))}
                     <SelectItem value="custom" className="text-[#0071E3] dark:text-[#0A84FF] font-medium focus:bg-[#0071E3]/10 dark:focus:bg-[#0A84FF]/10 focus:text-[#0071E3] dark:focus:text-[#0A84FF] cursor-pointer rounded-lg my-1">
                         <div className="flex items-center gap-2">
                             <FolderInput className="h-4 w-4" />
