@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { searchMoviesAction } from './actions';
+// import { searchMoviesAction } from './actions'; // No longer used
 import { GroupedMovie } from '@/lib/zt-client-enhanced';
 import { MovieCard } from '@/components/movie-card';
 import { Input } from '@/components/ui/input';
@@ -28,19 +28,21 @@ export function SearchClient() {
         setSearched(true);
 
         try {
-            const result = await searchMoviesAction(query);
+            // Use the REST API instead of Server Action
+            const response = await fetch(`/api/movies/search?q=${encodeURIComponent(query.trim())}`);
+            const data = await response.json();
 
-            if ('error' in result) {
-                setError(result.error);
-                setMovies([]);
-            } else {
-                setMovies(result.movies);
-                if (result.movies.length === 0) {
-                    setError(t('search.no_results'));
-                }
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to search movies');
             }
-        } catch (err) {
-            setError(t('search.error'));
+
+            setMovies(data.movies || []);
+            if (data.movies && data.movies.length === 0) {
+                setError(t('search.no_results'));
+            }
+        } catch (err: any) {
+            console.error('Search error:', err);
+            setError(err.message || t('search.error'));
             setMovies([]);
         } finally {
             setLoading(false);

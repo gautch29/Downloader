@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { GroupedMovie } from '@/lib/zt-client-enhanced';
-import { getDownloadLinksAction, add1fichierDownloadAction } from '../app/search/actions';
+import { add1fichierDownloadAction } from '../app/search/actions';
+// import { getDownloadLinksAction } from '../app/search/actions'; // No longer used
 import { Download, Film, Loader2, ChevronDown } from 'lucide-react';
 import { Button } from './ui/button';
 import { GlassCard } from './ui/glass-card';
@@ -37,10 +38,18 @@ export function MovieCard({ movie }: MovieCardProps) {
             // Fetch the download links from the detail page
             if (downloadLinks.length === 0) {
                 setFetchingLinks(true);
-                const result = await getDownloadLinksAction(selectedQuality.url);
+
+                // Use REST API instead of Server Action
+                const response = await fetch('/api/movies/links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: selectedQuality.url })
+                });
+
+                const result = await response.json();
                 setFetchingLinks(false);
 
-                if ('error' in result) {
+                if (!response.ok) {
                     setError(result.error || 'Failed to fetch download links');
                     setDownloading(false);
                     return;
@@ -58,6 +67,7 @@ export function MovieCard({ movie }: MovieCardProps) {
                 window.open(downloadLinks[0], '_blank');
             }
         } catch (err) {
+            console.error('Download error:', err);
             setError('Failed to fetch download link');
         } finally {
             setDownloading(false);
