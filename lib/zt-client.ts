@@ -27,15 +27,13 @@ class ZTClient {
         if (this.initialized) return;
 
         try {
-            // The zt-film-api package doesn't properly support setting base URL
-            // We'll work around this by using the package's auto-detection
-            // but this may fail if ZT changes domains
-            await ZTP.useBaseURL();
+            // Use the explicit URL approach that works in test script
+            ZTP.useBaseURL(this.baseURL);
             this.initialized = true;
-            console.log(`[ZT] Client initialized`);
+            console.log(`[ZT] Client initialized with URL: ${this.baseURL}`);
         } catch (error) {
-            console.error('[ZT] Failed to initialize:', error);
-            // Try to continue anyway - the search might still work
+            console.error('[ZT] Initialization warning:', error);
+            // Continue anyway - search might still work
             this.initialized = true;
         }
     }
@@ -49,8 +47,10 @@ class ZTClient {
             // Search in films category
             const results = await ZTP.search('films', query);
 
+            console.log(`[ZT] Raw results type: ${typeof results}, isArray: ${Array.isArray(results)}`);
+
             if (!results || !Array.isArray(results)) {
-                console.log('[ZT] Invalid response format');
+                console.log('[ZT] Invalid response format:', results);
                 return { movies: [], total: 0 };
             }
 
