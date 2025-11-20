@@ -4,8 +4,7 @@ import * as cheerio from 'cheerio';
 async function testPlexMatching() {
     try {
         // Replace with your actual values
-        const { getSettings } = await import('./lib/settings');
-        // We can't import settings easily in a standalone script without ts-node
+        // const { getSettings } = await import('./lib/settings'); // Removed to avoid TS import error
         // So we'll ask user to hardcode or read from env if possible.
         // For now, let's use the same hardcoded values as before or ask user to fill them.
 
