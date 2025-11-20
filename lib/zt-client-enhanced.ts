@@ -135,7 +135,16 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // Look for 1fichier links in the page
+            // ZT uses dl-protect.link to protect download links
+            // Look for dl-protect links
+            $('a[href*="dl-protect.link"]').each((_, element) => {
+                const href = $(element).attr('href');
+                if (href && href.includes('dl-protect.link')) {
+                    links.push(href);
+                }
+            });
+
+            // Also check for direct 1fichier links (fallback)
             $('a[href*="1fichier"]').each((_, element) => {
                 const href = $(element).attr('href');
                 if (href && (href.includes('1fichier.com') || href.includes('1fichier.net'))) {
@@ -143,18 +152,10 @@ class ZTClientEnhanced {
                 }
             });
 
-            // Also check for links in text content
-            const pageText = $.text();
-            const urlRegex = /https?:\/\/(?:www\.)?1fichier\.(?:com|net)\/\?[a-zA-Z0-9]+/g;
-            const matches = pageText.match(urlRegex);
-            if (matches) {
-                links.push(...matches);
-            }
-
             // Remove duplicates
             const uniqueLinks = [...new Set(links)];
 
-            console.log(`[ZT] Found ${uniqueLinks.length} 1fichier links`);
+            console.log(`[ZT] Found ${uniqueLinks.length} download links (dl-protect or 1fichier)`);
             return uniqueLinks;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch download links:', error.message);
