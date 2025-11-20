@@ -10,6 +10,7 @@ export interface MovieQuality {
     language: string;
     url: string; // Detail page URL
     links: string[]; // 1fichier links (fetched from detail page)
+    fileSize?: string; // e.g., "1.5 GB"
 }
 
 export interface GroupedMovie {
@@ -19,6 +20,7 @@ export interface GroupedMovie {
     year?: string;
     poster?: string;
     qualities: MovieQuality[];
+    inPlex?: boolean; // Whether movie exists in Plex library
 }
 
 export interface SearchResult {
@@ -57,35 +59,43 @@ class ZTClientEnhanced {
 
             console.log(`[ZT] Found ${results.length} results`);
 
-            // Group movies by clean title
+            // Group movies by clean title + year (more precise grouping)
             const movieMap = new Map<string, GroupedMovie>();
 
             for (const result of results) {
                 const cleanTitle = this.extractCleanTitle(result.title);
                 const year = this.extractYear(result.title);
 
-                if (!movieMap.has(cleanTitle)) {
-                    movieMap.set(cleanTitle, {
+                // Use title + year as key for more precise grouping
+                const groupKey = year ? `${cleanTitle}-${year}` : cleanTitle;
+
+                if (!movieMap.has(groupKey)) {
+                    movieMap.set(groupKey, {
                         id: result.id,
                         title: cleanTitle,
                         cleanTitle,
                         year,
                         poster: result.image,
-                        qualities: []
+                        qualities: [],
+                        inPlex: false // Will be checked later
                     });
                 }
 
-                const movie = movieMap.get(cleanTitle)!;
+                const movie = movieMap.get(groupKey)!;
                 movie.qualities.push({
                     quality: result.quality || 'Unknown',
                     language: result.language || 'Unknown',
                     url: result.url,
-                    links: [] // Will be fetched on-demand
+                    links: [],
+                    fileSize: undefined // Will be fetched from detail page
                 });
             }
 
             const groupedMovies = Array.from(movieMap.values());
             console.log(`[ZT] Grouped into ${groupedMovies.length} unique movies`);
+
+            // Check Plex for each movie
+            await this.checkPlexStatus(groupedMovies);
 
             return {
                 movies: groupedMovies,
@@ -130,6 +140,67 @@ class ZTClientEnhanced {
         } catch (error: any) {
             console.error('[ZT] Failed to fetch download links:', error.message);
             return [];
+        }
+    }
+
+    async getFileSize(detailPageUrl: string): Promise<string | undefined> {
+        try {
+            const response = await axios.get(detailPageUrl);
+            const $ = cheerio.load(response.data);
+
+            // Look for file size in common patterns
+            const pageText = $.text();
+
+            // Common patterns: "1.5 GB", "750 MB", "2.3Go", etc.
+            const sizeMatch = pageText.match(/(\d+\.?\d*)\s*(GB|MB|Go|Mo|TB|To)/i);
+            if (sizeMatch) {
+                return `${sizeMatch[1]} ${sizeMatch[2].toUpperCase()}`;
+            }
+
+            return undefined;
+        } catch (error) {
+            return undefined;
+        }
+    }
+
+    private async checkPlexStatus(movies: GroupedMovie[]): Promise<void> {
+        try {
+            const { getSettings } = await import('./settings');
+            const settings = await getSettings();
+
+            if (!settings?.plexUrl || !settings?.plexToken) {
+                // Plex not configured
+                return;
+            }
+
+            // Fetch Plex library
+            const baseUrl = settings.plexUrl.replace(/\/$/, '');
+            const response = await axios.get(`${baseUrl}/library/sections/all/all`, {
+                params: { 'X-Plex-Token': settings.plexToken },
+                timeout: 5000
+            });
+
+            const $ = cheerio.load(response.data, { xmlMode: true });
+
+            // Extract all movie titles from Plex
+            const plexTitles = new Set<string>();
+            $('Video[type="movie"]').each((_, element) => {
+                const title = $(element).attr('title');
+                if (title) {
+                    plexTitles.add(title.toLowerCase().trim());
+                }
+            });
+
+            // Check each movie against Plex library
+            for (const movie of movies) {
+                const movieTitle = movie.cleanTitle.toLowerCase().trim();
+                movie.inPlex = plexTitles.has(movieTitle);
+            }
+
+            console.log(`[ZT] Checked ${movies.length} movies against Plex library`);
+        } catch (error) {
+            console.error('[ZT] Failed to check Plex status:', error);
+            // Silently fail - Plex check is optional
         }
     }
 

@@ -104,9 +104,16 @@ export function MovieCard({ movie }: MovieCardProps) {
             {/* Info */}
             <div className="p-4 space-y-3">
                 <div>
-                    <h3 className="font-semibold text-zinc-900 dark:text-white line-clamp-2 text-sm">
-                        {movie.title}
-                    </h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-zinc-900 dark:text-white line-clamp-2 text-sm flex-1">
+                            {movie.title}
+                        </h3>
+                        {movie.inPlex && (
+                            <div className="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-medium whitespace-nowrap">
+                                ✓ {t('movie.in_plex')}
+                            </div>
+                        )}
+                    </div>
                     {movie.year && (
                         <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                             {movie.year}
@@ -129,19 +136,27 @@ export function MovieCard({ movie }: MovieCardProps) {
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium">{quality.quality}</span>
                                         <span className="text-xs text-zinc-500">{quality.language}</span>
+                                        {quality.fileSize && (
+                                            <span className="text-xs text-zinc-400">({quality.fileSize})</span>
+                                        )}
                                     </div>
                                 </SelectItem>
                             ))}
                         </SelectContent>
                     </Select>
                 ) : (
-                    <div className="flex items-center gap-2 text-xs">
+                    <div className="flex items-center gap-2 text-xs flex-wrap">
                         <span className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
                             {selectedQuality.quality}
                         </span>
                         <span className="text-zinc-500 dark:text-zinc-400">
                             {selectedQuality.language}
                         </span>
+                        {selectedQuality.fileSize && (
+                            <span className="text-zinc-400 dark:text-zinc-500">
+                                {selectedQuality.fileSize}
+                            </span>
+                        )}
                     </div>
                 )}
 
