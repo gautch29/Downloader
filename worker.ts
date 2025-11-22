@@ -41,6 +41,10 @@ async function processQueue() {
             let totalBytes = 0;
             let downloadedBytes = 0;
 
+            // Speed calculation variables
+            let lastSpeedBytes = 0;
+            let lastSpeedTime = Date.now();
+
             const response = await ky.get(directLink, {
                 onDownloadProgress: async (progress) => {
                     // Get total size if available
@@ -63,16 +67,38 @@ async function processQueue() {
                     const progressPercent = progress.percent ? Math.floor(progress.percent * 100) : 0;
 
                     if (now - lastProgressUpdate > 2000 || progressPercent >= 99) {
+                        // Calculate speed and ETA
+                        const timeDiff = (now - lastSpeedTime) / 1000; // seconds
+                        const bytesDiff = downloadedBytes - lastSpeedBytes;
+
+                        let speed = 0;
+                        let eta = 0;
+
+                        if (timeDiff > 0) {
+                            speed = Math.floor(bytesDiff / timeDiff); // bytes per second
+
+                            if (speed > 0 && totalBytes > 0) {
+                                const remainingBytes = totalBytes - downloadedBytes;
+                                eta = Math.floor(remainingBytes / speed); // seconds
+                            }
+                        }
+
+                        // Reset speed tracking variables
+                        lastSpeedBytes = downloadedBytes;
+                        lastSpeedTime = now;
                         lastProgressUpdate = now;
+
                         try {
                             await db.update(downloads)
                                 .set({
                                     progress: progressPercent,
+                                    speed: speed,
+                                    eta: eta,
                                     updatedAt: new Date()
                                 })
                                 .where(eq(downloads.id, download.id));
 
-                            console.log(`Download ${download.id}: ${progressPercent}% (${(downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(totalBytes / 1024 / 1024).toFixed(1)}MB)`);
+                            console.log(`Download ${download.id}: ${progressPercent}% (${(downloadedBytes / 1024 / 1024).toFixed(1)}MB / ${(totalBytes / 1024 / 1024).toFixed(1)}MB) - ${(speed / 1024 / 1024).toFixed(2)} MB/s - ETA: ${eta}s`);
                         } catch (dbError) {
                             console.error(`Failed to update progress in DB:`, dbError);
                         }

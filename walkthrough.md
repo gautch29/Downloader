@@ -1,66 +1,46 @@
-# Walkthrough - Align Download Path and Filename Fields
+# Walkthrough - Add Download ETA Feature
 
-I have aligned the "Download Path" and "Filename" fields in the main download form to ensure they are visually consistent and properly aligned on all screen sizes.
+I have added a feature to display the download speed and estimated time remaining (ETA) for active downloads.
 
 ## Changes
 
-### 1. Standardized Input Height
-The Filename input was previously shorter on mobile (`h-10`) than the Path Selector (`h-12`). I updated it to be `h-12` on all screens.
+### 1. Database Schema
+Added `speed` and `eta` columns to the `downloads` table.
 
-**File:** `app/home-client.tsx`
-```diff
-- className="h-10 md:h-12 text-sm ..."
-+ className="h-12 text-sm ..."
+**File:** `db/schema.ts`
+```typescript
+speed: integer('speed'), // bytes per second
+eta: integer('eta'), // estimated seconds remaining
 ```
 
-### 2. Standardized Label Row Height
-The label row (containing the label and the "Manage" button) had a variable height (`h-6 md:h-8`). However, the "Manage" button in the Path Selector has a fixed height of `h-8`, causing misalignment on mobile. I standardized the label row height to `h-8` for both fields.
+### 2. Backend Logic
+Updated the worker to calculate speed and ETA during the download process.
+- **Speed:** Calculated based on bytes downloaded since the last check (every ~2 seconds).
+- **ETA:** Calculated as `(Total Size - Downloaded Size) / Speed`.
 
-**File:** `app/home-client.tsx`
-```diff
-- <div className="flex items-center justify-between h-6 md:h-8">
-+ <div className="flex items-center justify-between h-8">
+**File:** `worker.ts`
+```typescript
+// Calculate speed and ETA
+const timeDiff = (now - lastSpeedTime) / 1000; // seconds
+const bytesDiff = downloadedBytes - lastSpeedBytes;
+speed = Math.floor(bytesDiff / timeDiff);
+eta = Math.floor(remainingBytes / speed);
 ```
 
-**File:** `components/path-selector.tsx`
-```diff
-- <div className="flex items-center justify-between h-6 md:h-8">
-+ <div className="flex items-center h-8">
-```
+### 3. Frontend UI
+Updated the `DownloadCard` to display the speed and ETA when a download is in progress.
+- **Speed:** Displayed in MB/s.
+- **ETA:** Displayed in seconds or "Xm Ys" format.
 
-### 3. Removed Redundant "Manage Paths" Button
-The "Manage Paths" button was present in two places:
-1.  Top right of the card (Header)
-2.  Inside the "Download Path" label row
-
-This redundancy caused visual clutter and made the "Download Path" label row look different from the "Custom Filename" label row, creating a sense of misalignment. I removed the button from the "Download Path" label row, leaving only the label. This ensures both fields have identical header structures.
-
-**File:** `components/path-selector.tsx`
-```diff
-- <PathShortcutsModal shortcuts={shortcuts} />
-```
-
-### 4. Fixed Hidden Input Spacing Issue
-The `PathSelector` component used `space-y-2` for vertical spacing. A `hidden` input was placed as the first child. Tailwind's `space-y` utility adds a top margin to all children except the first. Since the hidden input was the first child, the subsequent label div received a top margin, pushing it down by 8px relative to the Filename label (which is the first child in its container).
-
-I moved the hidden input to the end of the container to resolve this.
-
-**File:** `components/path-selector.tsx`
-```diff
- <div className="space-y-2">
--    <input type="hidden" name="targetPath" value={effectivePath} />
-     <div className="flex items-center h-8">...</div>
-     <div className="flex gap-2">...</div>
-+    <input type="hidden" name="targetPath" value={effectivePath} />
- </div>
+**File:** `components/download-card.tsx`
+```tsx
+{download.speed ? `${(download.speed / 1024 / 1024).toFixed(1)} MB/s` : ...}
+{download.eta < 60 ? `${download.eta}s` : ...}
 ```
 
 ## Verification Results
 
-### Visual Alignment
-- **Mobile:** Both fields now have a 32px label row and a 48px input row, ensuring perfect vertical alignment.
-- **Desktop:** The alignment remains consistent with the previous desktop layout, but now robust against any content changes.
-- **Symmetry:** Both fields now start with a clean label row containing only the label text, ensuring perfect visual symmetry.
-- **Vertical Position:** The labels are now perfectly aligned vertically, as the unwanted top margin on the Path Selector label has been removed.
-
-The fields should now be perfectly aligned side-by-side on desktop and consistent in height on mobile.
+### Manual Verification
+- **Speed Display:** Verified that speed is displayed in MB/s.
+- **ETA Display:** Verified that ETA is displayed and updates as the download progresses.
+- **Completion:** Verified that speed/ETA disappear when download completes (status changes).

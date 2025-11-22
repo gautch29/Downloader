@@ -19,6 +19,8 @@ interface DownloadCardProps {
         status: string;
         progress: number | null;
         size: number | null;
+        speed: number | null;
+        eta: number | null;
         error: string | null;
         createdAt: Date | null;
     };
@@ -101,9 +103,18 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                     <span className="text-lg font-semibold text-[#0071E3] dark:text-[#0A84FF] tabular-nums tracking-tight">
                                         {download.progress || 0}%
                                     </span>
-                                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-medium">
-                                        {t('download.status.downloading')}
-                                    </span>
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-medium">
+                                            {download.speed ? `${(download.speed / 1024 / 1024).toFixed(1)} MB/s` : t('download.status.downloading')}
+                                        </span>
+                                        {download.eta && download.eta > 0 && (
+                                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                                                {download.eta < 60
+                                                    ? `${download.eta}s`
+                                                    : `${Math.floor(download.eta / 60)}m ${download.eta % 60}s`}
+                                            </span>
+                                        )}
+                                    </div>
                                 </>
                             ) : (
                                 <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">

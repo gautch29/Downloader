@@ -10,6 +10,8 @@ export const downloads = sqliteTable('downloads', {
     status: text('status', { enum: ['pending', 'downloading', 'completed', 'error'] }).default('pending').notNull(),
     progress: integer('progress').default(0).notNull(),
     size: integer('size'),
+    speed: integer('speed'), // bytes per second
+    eta: integer('eta'), // estimated seconds remaining
     error: text('error'),
     createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`(strftime('%s', 'now'))`).notNull(),
