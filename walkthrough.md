@@ -1,69 +1,66 @@
-# Verification Walkthrough
+# Walkthrough - Align Download Path and Filename Fields
 
-## 1. Visual Design & Branding (Strict Apple Style)
-- [ ] **Header**:
-    - [ ] Verify title is "dl.flgr.fr" (Dark text).
-    - [ ] Verify logo/icon is **Apple Blue** (#0071E3) or neutral, NOT purple.
-    - [ ] Verify "Activity" pulse is **Apple Blue**, NOT purple.
-- [ ] **Home Page**:
-    - [ ] Verify background is clean, off-white/grey (no colorful blobs).
-    - [ ] Verify "Sparkles" icon is **Apple Blue**.
-    - [ ] Verify "Download" button is solid **Apple Blue** with white text (no gradients).
-    - [ ] Verify input fields have **Apple Blue** focus rings.
-- [ ] **Download Card**:
-    - [ ] Start a download.
-    - [ ] Verify progress bar is **Apple Blue**.
-    - [ ] Verify "Downloading" badge is **Apple Blue**.
-    - [ ] Verify "Completed" badge is **Apple Green** (#34C759).
-    - [ ] Verify "Error" badge is **Apple Red** (#FF3B30).
-- [ ] **Settings Page**:
-    - [ ] Verify section headers (Plex, Password) have **Apple Blue** accents.
-    - [ ] Verify "Save" buttons are **Apple Blue**.
-    - [ ] Verify links are **Apple Blue**.
-- [ ] **Modals (Path Shortcuts)**:
-    - [ ] Verify "Add" button is **Apple Blue**.
-    - [ ] Verify "Trash" icon hover state is **Apple Red**.
+I have aligned the "Download Path" and "Filename" fields in the main download form to ensure they are visually consistent and properly aligned on all screen sizes.
 
-## 2. Localization (French/English)
-- [ ] **Header**: Toggle language. Verify "Settings" and "Logout" tooltips/text change.
-- [ ] **Home**: Verify "Download from 1fichier", subtitle, and placeholders translate.
-- [ ] **Download Card**: Verify status badges (Downloading, Completed, etc.) translate.
-- [ ] **Settings**: Verify all labels, titles, and success/error messages translate.
-- [ ] **Path Shortcuts**: Verify modal title, descriptions, and button labels translate.
+## Changes
 
-### 3. System Dark Mode Verification
-- [ ] **Toggle System Theme**: Switch your OS theme between Light and Dark.
-- [ ] **Check Backgrounds**:
-    - **Light Mode**: Should be white/light grey with light glass cards.
-    - **Dark Mode**: Should be dark grey/black (`#1D1D1F`) with dark glass cards.
-- [ ] **Check Text Legibility**: Ensure text is readable in both modes (Dark text on Light, White text on Dark).
-- [ ] **Check Accents**: Verify "Apple Blue" buttons and icons look good in both modes.
-- [ ] **Check Inputs**: Verify input fields have appropriate background and border colors in both modes.
+### 1. Standardized Input Height
+The Filename input was previously shorter on mobile (`h-10`) than the Path Selector (`h-12`). I updated it to be `h-12` on all screens.
 
-### 4. Localization Check
-- [ ] **Toggle Language**: Use the language toggle in the header.
-- [ ] **Verify Translations**: Check that all text updates to the selected language (English/French).
-- [ ] **Check Dynamic Content**: Ensure download status and error messages are translated.
+**File:** `app/home-client.tsx`
+```diff
+- className="h-10 md:h-12 text-sm ..."
++ className="h-12 text-sm ..."
+```
 
-## 2. Complete Localization
-- **Objective**: Verify that ALL text is translated when switching languages.
-- **Steps**:
-    2.  **Header**:
-        -   Hover over Settings icon -> "Paramètres" (tooltip/title)
-        -   Hover over Logout icon -> "Déconnexion" (tooltip/title)
-    3.  **Home Page**:
-        -   "Active Downloads" -> "Téléchargements actifs"
-        -   "No downloads yet" -> "Aucun téléchargement"
-    4.  **Settings Page**:
-        -   Labels: "URL Serveur Plex", "Jeton Plex"
-        -   Buttons: "Enregistrer Plex", "Mettre à jour"
-    5.  **Path Shortcuts Modal**:
-        -   Title: "Gérer les raccourcis"
-        -   Labels: "Nom", "Chemin"
+### 2. Standardized Label Row Height
+The label row (containing the label and the "Manage" button) had a variable height (`h-6 md:h-8`). However, the "Manage" button in the Path Selector has a fixed height of `h-8`, causing misalignment on mobile. I standardized the label row height to `h-8` for both fields.
 
-## 3. Mobile Responsiveness
-- **Objective**: Ensure the light theme looks good on mobile.
-- **Steps**:
-    1.  Resize to mobile width.
-    2.  Verify that the pastel background blobs are visible but not overwhelming.
-    3.  Check that the glass cards have appropriate padding and margins.
+**File:** `app/home-client.tsx`
+```diff
+- <div className="flex items-center justify-between h-6 md:h-8">
++ <div className="flex items-center justify-between h-8">
+```
+
+**File:** `components/path-selector.tsx`
+```diff
+- <div className="flex items-center justify-between h-6 md:h-8">
++ <div className="flex items-center h-8">
+```
+
+### 3. Removed Redundant "Manage Paths" Button
+The "Manage Paths" button was present in two places:
+1.  Top right of the card (Header)
+2.  Inside the "Download Path" label row
+
+This redundancy caused visual clutter and made the "Download Path" label row look different from the "Custom Filename" label row, creating a sense of misalignment. I removed the button from the "Download Path" label row, leaving only the label. This ensures both fields have identical header structures.
+
+**File:** `components/path-selector.tsx`
+```diff
+- <PathShortcutsModal shortcuts={shortcuts} />
+```
+
+### 4. Fixed Hidden Input Spacing Issue
+The `PathSelector` component used `space-y-2` for vertical spacing. A `hidden` input was placed as the first child. Tailwind's `space-y` utility adds a top margin to all children except the first. Since the hidden input was the first child, the subsequent label div received a top margin, pushing it down by 8px relative to the Filename label (which is the first child in its container).
+
+I moved the hidden input to the end of the container to resolve this.
+
+**File:** `components/path-selector.tsx`
+```diff
+ <div className="space-y-2">
+-    <input type="hidden" name="targetPath" value={effectivePath} />
+     <div className="flex items-center h-8">...</div>
+     <div className="flex gap-2">...</div>
++    <input type="hidden" name="targetPath" value={effectivePath} />
+ </div>
+```
+
+## Verification Results
+
+### Visual Alignment
+- **Mobile:** Both fields now have a 32px label row and a 48px input row, ensuring perfect vertical alignment.
+- **Desktop:** The alignment remains consistent with the previous desktop layout, but now robust against any content changes.
+- **Symmetry:** Both fields now start with a clean label row containing only the label text, ensuring perfect visual symmetry.
+- **Vertical Position:** The labels are now perfectly aligned vertically, as the unwanted top margin on the Path Selector label has been removed.
+
+The fields should now be perfectly aligned side-by-side on desktop and consistent in height on mobile.

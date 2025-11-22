@@ -58,7 +58,7 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                             <div className="grid gap-3 md:gap-6 md:grid-cols-2 items-start">
                                 <PathSelector shortcuts={pathShortcuts} />
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between h-6 md:h-8">
+                                    <div className="flex items-center justify-between h-8">
                                         <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                                             {t('download.custom_filename')}
                                         </label>
@@ -66,7 +66,7 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
                                     <Input
                                         name="customFilename"
                                         placeholder="e.g., my-video.mkv"
-                                        className="h-10 md:h-12 text-sm bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 transition-all rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 shadow-sm"
+                                        className="h-12 text-sm bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 transition-all rounded-xl text-zinc-900 dark:text-white placeholder:text-zinc-400 shadow-sm"
                                     />
                                 </div>
                             </div>
