@@ -25,7 +25,19 @@ The label row (containing the label and the "Manage" button) had a variable heig
 **File:** `components/path-selector.tsx`
 ```diff
 - <div className="flex items-center justify-between h-6 md:h-8">
-+ <div className="flex items-center justify-between h-8">
++ <div className="flex items-center h-8">
+```
+
+### 3. Removed Redundant "Manage Paths" Button
+The "Manage Paths" button was present in two places:
+1.  Top right of the card (Header)
+2.  Inside the "Download Path" label row
+
+This redundancy caused visual clutter and made the "Download Path" label row look different from the "Custom Filename" label row, creating a sense of misalignment. I removed the button from the "Download Path" label row, leaving only the label. This ensures both fields have identical header structures.
+
+**File:** `components/path-selector.tsx`
+```diff
+- <PathShortcutsModal shortcuts={shortcuts} />
 ```
 
 ## Verification Results
@@ -33,5 +45,6 @@ The label row (containing the label and the "Manage" button) had a variable heig
 ### Visual Alignment
 - **Mobile:** Both fields now have a 32px label row and a 48px input row, ensuring perfect vertical alignment.
 - **Desktop:** The alignment remains consistent with the previous desktop layout, but now robust against any content changes.
+- **Symmetry:** Both fields now start with a clean label row containing only the label text, ensuring perfect visual symmetry.
 
 The fields should now be perfectly aligned side-by-side on desktop and consistent in height on mobile.

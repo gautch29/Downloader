@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Folder, FolderInput, FolderSearch } from 'lucide-react';
 import type { PathShortcut } from '@/lib/path-config';
 import { useI18n } from '@/lib/i18n';
-import { PathShortcutsModal } from './path-shortcuts-modal';
+
 import { FolderBrowserModal } from './folder-browser-modal';
 
 interface PathSelectorProps {
@@ -61,11 +61,10 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
         <div className="space-y-2">
             <input type="hidden" name="targetPath" value={effectivePath} />
 
-            <div className="flex items-center justify-between h-8">
+            <div className="flex items-center h-8">
                 <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
                     {t('download.path')}
                 </label>
-                <PathShortcutsModal shortcuts={shortcuts} />
             </div>
 
             <div className="flex gap-2">
