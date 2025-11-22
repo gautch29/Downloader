@@ -214,29 +214,30 @@ class ZTClientEnhanced {
 
             const episodes: { episode: string; link: string }[] = [];
             const episodePattern = /Episode\s+(\d+)/i;
+            const seenEpisodes = new Set<string>();
 
-            // Find all links and track which hosting service they belong to
-            let currentHosting: string | null = null;
             let in1fichierSection = false;
+            let shouldStop = false;
 
             $('*').each((_: number, el: any) => {
+                if (shouldStop) return false; // Stop if we've finished processing
+
                 const $el = $(el);
                 const text = $el.text().trim();
 
-                // Check if this is a hosting service heading
-                if (text === '1fichier') {
+                // Check if this is the 1fichier heading
+                if (text === '1fichier' && !in1fichierSection) {
                     console.log('[ZT] Found 1fichier section');
-                    currentHosting = '1fichier';
                     in1fichierSection = true;
                     return;
                 }
 
-                // If we hit another hosting service, stop collecting
+                // If we hit another hosting service after being in 1fichier, stop completely
                 if (in1fichierSection && (text === 'Rapidgator' || text === 'Turbobit' ||
                     text === 'Nitroflare' || text === 'Uploady' || text === 'DailyUploads')) {
-                    console.log(`[ZT] Reached ${text} section, stopping`);
-                    in1fichierSection = false;
-                    return;
+                    console.log(`[ZT] Reached ${text} section, stopping collection`);
+                    shouldStop = true;
+                    return false;
                 }
 
                 // Only collect links if we're in the 1fichier section
@@ -245,16 +246,20 @@ class ZTClientEnhanced {
                     const linkText = $el.text().trim();
 
                     if (href && href.includes('dl-protect.link') && episodePattern.test(linkText)) {
-                        console.log(`[ZT] Found episode: "${linkText}" -> ${href}`);
-                        episodes.push({
-                            episode: linkText,
-                            link: href
-                        });
+                        // Deduplicate by episode name
+                        if (!seenEpisodes.has(linkText)) {
+                            console.log(`[ZT] Found episode: "${linkText}" -> ${href}`);
+                            episodes.push({
+                                episode: linkText,
+                                link: href
+                            });
+                            seenEpisodes.add(linkText);
+                        }
                     }
                 }
             });
 
-            console.log(`[ZT] Total episodes found in 1fichier section: ${episodes.length}`);
+            console.log(`[ZT] Total unique episodes found: ${episodes.length}`);
             return episodes;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch episode links:', error.message);
