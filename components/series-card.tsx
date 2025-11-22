@@ -34,23 +34,16 @@ export function SeriesCard({ series }: SeriesCardProps) {
     return (
         <>
             <div ref={elementRef} className="relative">
-                {/* Mouse glow effect */}
-                {isHovering && (
-                    <div
-                        className="pointer-events-none absolute rounded-2xl opacity-0 transition-opacity duration-300 blur-xl"
-                        style={{
-                            left: `${mousePosition.x}px`,
-                            top: `${mousePosition.y}px`,
-                            width: '200px',
-                            height: '200px',
-                            transform: 'translate(-50%, -50%)',
-                            background: `radial-gradient(circle, rgba(${dominantColor}, 0.4) 0%, transparent 70%)`,
-                            opacity: isHovering ? 1 : 0,
-                        }}
-                    />
-                )}
-
-                <GlassCard className="overflow-hidden hover:scale-[1.02] transition-transform relative z-10">
+                <GlassCard className="overflow-hidden hover:scale-[1.02] transition-transform relative">
+                    {/* Mouse glow effect - appears on the card where mouse is */}
+                    {isHovering && (
+                        <div
+                            className="pointer-events-none absolute inset-0 z-10"
+                            style={{
+                                background: `radial-gradient(circle 300px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.3), transparent 60%)`,
+                            }}
+                        />
+                    )}
                     <div className="relative">
                         {/* Poster */}
                         <div className="aspect-[2/3] bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-800 dark:to-zinc-900 flex items-center justify-center overflow-hidden">
