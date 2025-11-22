@@ -11,23 +11,29 @@ interface BookProps {
         id: string;
         title: string;
         author: string;
-        year?: number;
+        year?: number | string;
         cover?: string | null;
-        isbn?: string;
-        language?: string;
+        link?: string;
+        extension?: string;
+        size?: string;
     };
 }
 
 export function BookCard({ book }: BookProps) {
-    const { t } = useI18n(); // We might need to add translations for books later
+    const { t } = useI18n();
     const [downloading, setDownloading] = useState(false);
 
     const handleDownload = () => {
         setDownloading(true);
-        // Fallback: Open Anna's Archive search
-        const query = book.isbn || `${book.title} ${book.author}`;
-        const url = `https://annas-archive.org/search?q=${encodeURIComponent(query)}`;
-        window.open(url, '_blank');
+        // Open the detail page on Anna's Archive
+        if (book.link) {
+            window.open(book.link, '_blank');
+        } else {
+            // Fallback: Open Anna's Archive search
+            const query = `${book.title} ${book.author}`;
+            const url = `https://annas-archive.org/search?q=${encodeURIComponent(query)}`;
+            window.open(url, '_blank');
+        }
         setDownloading(false);
     };
 

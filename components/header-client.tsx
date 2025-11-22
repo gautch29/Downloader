@@ -46,6 +46,12 @@ export function HeaderClient({ username }: HeaderClientProps) {
                             {t('nav.search')}
                         </Link>
                         <Link
+                            href="/series"
+                            className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                        >
+                            {t('nav.series')}
+                        </Link>
+                        <Link
                             href="/books"
                             className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
                         >

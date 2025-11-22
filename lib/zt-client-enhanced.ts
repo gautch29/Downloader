@@ -46,12 +46,20 @@ class ZTClientEnhanced {
     }
 
     async searchMovies(query: string): Promise<SearchResult> {
+        return this.search(query, 'films');
+    }
+
+    async searchSeries(query: string): Promise<SearchResult> {
+        return this.search(query, 'series');
+    }
+
+    private async search(query: string, category: 'films' | 'series'): Promise<SearchResult> {
         await this.initialize();
 
         try {
-            console.log(`[ZT] Searching for: ${query}`);
+            console.log(`[ZT] Searching for ${category}: ${query}`);
 
-            const results = await ZTP.search('films', query);
+            const results = await ZTP.search(category, query);
 
             if (!results || !Array.isArray(results)) {
                 return { movies: [], total: 0 };
@@ -92,14 +100,14 @@ class ZTClientEnhanced {
             }
 
             const groupedMovies = Array.from(movieMap.values());
-            console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} movies`);
+            console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} items`);
 
-            // Fetch file sizes for ALL qualities of first 10 movies
-            const moviesToFetch = groupedMovies.slice(0, 10);
-            console.log(`[ZT] Fetching file sizes for ${moviesToFetch.length} movies...`);
+            // Fetch file sizes for ALL qualities of first 10 items
+            const itemsToFetch = groupedMovies.slice(0, 10);
+            console.log(`[ZT] Fetching file sizes for ${itemsToFetch.length} items...`);
 
             await Promise.all(
-                moviesToFetch.flatMap((movie) =>
+                itemsToFetch.flatMap((movie) =>
                     movie.qualities.map(async (quality) => {
                         try {
                             const fileSize = await this.getFileSize(quality.url);
@@ -113,8 +121,10 @@ class ZTClientEnhanced {
                 )
             );
 
-            // Check Plex for each movie
-            await this.checkPlexStatus(groupedMovies);
+            // Check Plex for each item (only for movies for now, series logic is different)
+            if (category === 'films') {
+                await this.checkPlexStatus(groupedMovies);
+            }
 
             return {
                 movies: groupedMovies,
