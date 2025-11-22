@@ -91,23 +91,30 @@ export function MovieCard({ movie }: MovieCardProps) {
                     <>
                         {/* Ambient glow - covers entire card */}
                         <div
-                            className="pointer-events-none absolute inset-0 z-10 opacity-20"
+                            className="pointer-events-none absolute inset-0 z-10"
                             style={{
-                                background: `rgba(${dominantColor}, 0.15)`,
+                                background: `rgba(${dominantColor}, 0.08)`,
                             }}
                         />
-                        {/* Primary light source - follows mouse */}
+                        {/* Wide outer glow - very soft */}
                         <div
                             className="pointer-events-none absolute inset-0 z-10"
                             style={{
-                                background: `radial-gradient(circle 400px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.4), rgba(${dominantColor}, 0.1) 50%, transparent 70%)`,
+                                background: `radial-gradient(circle 800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.15), transparent 80%)`,
                             }}
                         />
-                        {/* Intense center - brightest at mouse position */}
+                        {/* Medium glow - follows mouse */}
                         <div
                             className="pointer-events-none absolute inset-0 z-10"
                             style={{
-                                background: `radial-gradient(circle 150px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.6), transparent 60%)`,
+                                background: `radial-gradient(circle 500px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.25), rgba(${dominantColor}, 0.08) 60%, transparent 80%)`,
+                            }}
+                        />
+                        {/* Center highlight - brightest at mouse */}
+                        <div
+                            className="pointer-events-none absolute inset-0 z-10"
+                            style={{
+                                background: `radial-gradient(circle 200px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.35), transparent 70%)`,
                             }}
                         />
                     </>
