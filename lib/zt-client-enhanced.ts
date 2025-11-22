@@ -214,38 +214,65 @@ class ZTClientEnhanced {
 
             const episodes: { episode: string; link: string }[] = [];
 
-            // Look for the "1fichier" label, then collect episode links
+            // Strategy: Find all text nodes or elements containing "Episode X" pattern
+            // Then find the nearest parent link or associated link
+
+            // First, let's find the 1fichier section
             let found1fichier = false;
-            let skipUntilNext1fichier = false;
+            let fichierSection: any = null;
 
             $('*').each((_, el) => {
                 const text = $(el).text().trim();
-
-                // Reset if we hit another hosting service
-                if (found1fichier && (text === 'Rapidgator' || text === 'Turbobit' || text === 'Nitroflare' ||
-                    text === 'Uploady' || text === 'DailyUploads')) {
-                    skipUntilNext1fichier = true;
-                }
-
-                // Look for exact "1fichier" text
-                if (!found1fichier && text === '1fichier') {
-                    console.log(`[ZT] Found 1fichier label for episodes`);
+                if (text === '1fichier') {
                     found1fichier = true;
-                    skipUntilNext1fichier = false;
-                    return;
+                    fichierSection = $(el).parent();
+                    console.log(`[ZT] Found 1fichier section`);
+                    return false; // break
                 }
+            });
 
-                // After finding 1fichier, collect episode links
-                if (found1fichier && !skipUntilNext1fichier && $(el).is('a')) {
-                    const href = $(el).attr('href');
-                    const linkText = $(el).text().trim();
+            if (!found1fichier || !fichierSection) {
+                console.log('[ZT] 1fichier section not found');
+                return [];
+            }
 
-                    // Look for links with "Episode" in the text (e.g., "Episode 1", "Episode 2")
-                    if (href && href.includes('dl-protect.link') && linkText.toLowerCase().includes('episode')) {
-                        console.log(`[ZT] Found episode link: ${linkText} -> ${href}`);
+            // Now search within or after the 1fichier section for episode patterns
+            // Look for elements containing "Episode" followed by a number
+            const episodePattern = /Episode\s+(\d+)/i;
+
+            // Search in the parent container and siblings
+            const container = fichierSection.parent();
+
+            container.find('*').each((_: number, el: any) => {
+                const $el = $(el);
+                const text = $el.text().trim();
+
+                if (episodePattern.test(text)) {
+                    // Found an episode mention
+                    // Check if this element is a link
+                    let link = null;
+
+                    if ($el.is('a')) {
+                        link = $el.attr('href');
+                    } else {
+                        // Check if there's a link as a child
+                        const childLink = $el.find('a').first();
+                        if (childLink.length) {
+                            link = childLink.attr('href');
+                        } else {
+                            // Check if there's a link as a parent
+                            const parentLink = $el.closest('a');
+                            if (parentLink.length) {
+                                link = parentLink.attr('href');
+                            }
+                        }
+                    }
+
+                    if (link && link.includes('dl-protect.link')) {
+                        console.log(`[ZT] Found episode: ${text} -> ${link}`);
                         episodes.push({
-                            episode: linkText,
-                            link: href
+                            episode: text,
+                            link: link
                         });
                     }
                 }

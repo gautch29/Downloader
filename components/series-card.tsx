@@ -84,9 +84,6 @@ export function SeriesCard({ series }: SeriesCardProps) {
                                         <div className="flex items-center gap-2">
                                             <span className="font-medium">{quality.quality}</span>
                                             <span className="text-xs text-zinc-500">{quality.language}</span>
-                                            {quality.fileSize && (
-                                                <span className="text-xs text-zinc-400">({quality.fileSize})</span>
-                                            )}
                                         </div>
                                     </SelectItem>
                                 ))}
@@ -100,11 +97,6 @@ export function SeriesCard({ series }: SeriesCardProps) {
                             <span className="text-zinc-500 dark:text-zinc-400">
                                 {selectedQuality.language}
                             </span>
-                            {selectedQuality.fileSize && (
-                                <span className="text-zinc-400 dark:text-zinc-500">
-                                    {selectedQuality.fileSize}
-                                </span>
-                            )}
                         </div>
                     )}
 
