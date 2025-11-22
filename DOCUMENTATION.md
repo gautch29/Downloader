@@ -114,6 +114,8 @@ Stores download queue and status.
 | `status` | TEXT | `pending`, `downloading`, `completed`, `error` |
 | `progress` | INTEGER | Download progress (0-100) |
 | `size` | INTEGER | File size in bytes |
+| `speed` | INTEGER | Download speed in bytes/sec |
+| `eta` | INTEGER | Estimated seconds remaining |
 | `error` | TEXT | Error message if status is `error` |
 | `created_at` | TIMESTAMP | Creation timestamp |
 | `updated_at` | TIMESTAMP | Last update timestamp |

@@ -113,7 +113,8 @@ Get all downloads for the authenticated user.
       "filename": "string",
       "status": "pending" | "downloading" | "completed" | "error",
       "progress": 0-100,
-      "speed": "string (e.g., '1.5 MB/s')",
+      "speed": "number (bytes/sec)",
+      "eta": "number (seconds remaining)",
       "targetPath": "string",
       "createdAt": "ISO 8601 timestamp",
       "updatedAt": "ISO 8601 timestamp"
