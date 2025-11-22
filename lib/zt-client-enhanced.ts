@@ -213,67 +213,48 @@ class ZTClientEnhanced {
             const $ = cheerio.load(response.data);
 
             const episodes: { episode: string; link: string }[] = [];
-
-            // Look for all links that might be episodes
             const episodePattern = /Episode\s+(\d+)/i;
 
-            // Find all links on the page
-            $('a').each((_: number, el: any) => {
-                const $link = $(el);
-                const href = $link.attr('href');
-                const text = $link.text().trim();
+            // Find all links and track which hosting service they belong to
+            let currentHosting: string | null = null;
+            let in1fichierSection = false;
 
-                // Check if this link matches episode pattern and is a dl-protect link
-                if (href && href.includes('dl-protect.link') && episodePattern.test(text)) {
-                    console.log(`[ZT] Found episode link: "${text}" -> ${href}`);
-                    episodes.push({
-                        episode: text,
-                        link: href
-                    });
+            $('*').each((_: number, el: any) => {
+                const $el = $(el);
+                const text = $el.text().trim();
+
+                // Check if this is a hosting service heading
+                if (text === '1fichier') {
+                    console.log('[ZT] Found 1fichier section');
+                    currentHosting = '1fichier';
+                    in1fichierSection = true;
+                    return;
+                }
+
+                // If we hit another hosting service, stop collecting
+                if (in1fichierSection && (text === 'Rapidgator' || text === 'Turbobit' ||
+                    text === 'Nitroflare' || text === 'Uploady' || text === 'DailyUploads')) {
+                    console.log(`[ZT] Reached ${text} section, stopping`);
+                    in1fichierSection = false;
+                    return;
+                }
+
+                // Only collect links if we're in the 1fichier section
+                if (in1fichierSection && $el.is('a')) {
+                    const href = $el.attr('href');
+                    const linkText = $el.text().trim();
+
+                    if (href && href.includes('dl-protect.link') && episodePattern.test(linkText)) {
+                        console.log(`[ZT] Found episode: "${linkText}" -> ${href}`);
+                        episodes.push({
+                            episode: linkText,
+                            link: href
+                        });
+                    }
                 }
             });
 
-            // If no direct links found, try looking for episode text near links
-            if (episodes.length === 0) {
-                console.log('[ZT] No direct episode links found, trying alternative approach...');
-
-                // Find all elements with episode text
-                $('*').each((_: number, el: any) => {
-                    const $el = $(el);
-                    const text = $el.text().trim();
-
-                    // Only process if this element's text matches episode pattern
-                    // and doesn't have too much text (to avoid matching parent containers)
-                    if (episodePattern.test(text) && text.length < 50) {
-                        console.log(`[ZT] Found episode text: "${text}"`);
-
-                        // Look for a link in the next sibling or parent
-                        let $link = $el.find('a').first();
-                        if (!$link.length) {
-                            $link = $el.next('a');
-                        }
-                        if (!$link.length) {
-                            $link = $el.closest('a') as any;
-                        }
-                        if (!$link.length) {
-                            $link = $el.parent().find('a').first();
-                        }
-
-                        const href = $link.attr('href');
-                        if (href && href.includes('dl-protect.link')) {
-                            console.log(`[ZT] Found associated link: ${href}`);
-                            episodes.push({
-                                episode: text,
-                                link: href
-                            });
-                        } else {
-                            console.log(`[ZT] No valid link found for: "${text}"`);
-                        }
-                    }
-                });
-            }
-
-            console.log(`[ZT] Total episodes found: ${episodes.length}`);
+            console.log(`[ZT] Total episodes found in 1fichier section: ${episodes.length}`);
             return episodes;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch episode links:', error.message);
