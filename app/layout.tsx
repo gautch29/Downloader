@@ -7,8 +7,11 @@ import { MobileNav } from '@/components/mobile-nav';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: 'dl.flgr.fr',
+    title: 'Downloader',
     description: 'Premium 1fichier Download Manager',
+    icons: {
+        icon: '/globe.svg',
+    },
 };
 
 import { I18nProvider } from '@/lib/i18n';
