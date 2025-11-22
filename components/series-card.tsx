@@ -35,14 +35,31 @@ export function SeriesCard({ series }: SeriesCardProps) {
         <>
             <div ref={elementRef} className="relative">
                 <GlassCard className="overflow-hidden hover:scale-[1.02] transition-transform relative">
-                    {/* Mouse glow effect - appears on the card where mouse is */}
+                    {/* Realistic lighting effect - multiple layers for depth */}
                     {isHovering && (
-                        <div
-                            className="pointer-events-none absolute inset-0 z-10"
-                            style={{
-                                background: `radial-gradient(circle 300px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.3), transparent 60%)`,
-                            }}
-                        />
+                        <>
+                            {/* Ambient glow - covers entire card */}
+                            <div
+                                className="pointer-events-none absolute inset-0 z-10 opacity-20"
+                                style={{
+                                    background: `rgba(${dominantColor}, 0.15)`,
+                                }}
+                            />
+                            {/* Primary light source - follows mouse */}
+                            <div
+                                className="pointer-events-none absolute inset-0 z-10"
+                                style={{
+                                    background: `radial-gradient(circle 400px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.4), rgba(${dominantColor}, 0.1) 50%, transparent 70%)`,
+                                }}
+                            />
+                            {/* Intense center - brightest at mouse position */}
+                            <div
+                                className="pointer-events-none absolute inset-0 z-10"
+                                style={{
+                                    background: `radial-gradient(circle 150px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.6), transparent 60%)`,
+                                }}
+                            />
+                        </>
                     )}
                     <div className="relative">
                         {/* Poster */}

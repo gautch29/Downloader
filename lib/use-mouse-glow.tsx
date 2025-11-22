@@ -37,35 +37,59 @@ export function useDominantColor(imageUrl: string | null | undefined): string {
                 const imageData = ctx.getImageData(0, 0, 50, 50);
                 const data = imageData.data;
 
-                let r = 0, g = 0, b = 0;
-                let count = 0;
+                // Color frequency map
+                const colorMap = new Map<string, number>();
 
-                // Sample pixels and calculate average color
-                for (let i = 0; i < data.length; i += 16) { // Sample every 4th pixel for performance
-                    r += data[i];
-                    g += data[i + 1];
-                    b += data[i + 2];
-                    count++;
+                // Sample pixels and count color frequencies
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i + 1];
+                    const b = data[i + 2];
+                    const a = data[i + 3];
+
+                    // Skip transparent or very dark/light pixels
+                    if (a < 128 || (r < 20 && g < 20 && b < 20) || (r > 235 && g > 235 && b > 235)) {
+                        continue;
+                    }
+
+                    // Quantize colors to reduce variations
+                    const qr = Math.round(r / 32) * 32;
+                    const qg = Math.round(g / 32) * 32;
+                    const qb = Math.round(b / 32) * 32;
+                    const key = `${qr},${qg},${qb}`;
+
+                    colorMap.set(key, (colorMap.get(key) || 0) + 1);
                 }
 
-                r = Math.floor(r / count);
-                g = Math.floor(g / count);
-                b = Math.floor(b / count);
+                // Find most frequent color
+                let maxCount = 0;
+                let dominantRGB = '59, 130, 246'; // Default blue
+
+                for (const [color, count] of colorMap.entries()) {
+                    if (count > maxCount) {
+                        maxCount = count;
+                        dominantRGB = color;
+                    }
+                }
+
+                // Parse and boost saturation
+                const [r, g, b] = dominantRGB.split(',').map(Number);
 
                 // Boost saturation for more vibrant glow
                 const max = Math.max(r, g, b);
                 const min = Math.min(r, g, b);
                 const saturation = max === 0 ? 0 : (max - min) / max;
 
-                if (saturation < 0.3) {
-                    // Boost colors if image is too desaturated
-                    const boost = 1.5;
-                    r = Math.min(255, Math.floor(r * boost));
-                    g = Math.min(255, Math.floor(g * boost));
-                    b = Math.min(255, Math.floor(b * boost));
+                if (saturation < 0.4) {
+                    // Boost the dominant channel
+                    const boost = 1.4;
+                    const newR = r === max ? Math.min(255, Math.floor(r * boost)) : r;
+                    const newG = g === max ? Math.min(255, Math.floor(g * boost)) : g;
+                    const newB = b === max ? Math.min(255, Math.floor(b * boost)) : b;
+                    setColor(`${newR}, ${newG}, ${newB}`);
+                } else {
+                    setColor(dominantRGB);
                 }
-
-                setColor(`${r}, ${g}, ${b}`);
             } catch (error) {
                 // CORS or other error, use default
                 setColor('59, 130, 246');
