@@ -253,7 +253,7 @@ class ZTClientEnhanced {
                             $link = $el.next('a');
                         }
                         if (!$link.length) {
-                            $link = $el.closest('a');
+                            $link = $el.closest('a') as any;
                         }
                         if (!$link.length) {
                             $link = $el.parent().find('a').first();
