@@ -33,6 +33,8 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
             setLoading(true);
             setError(null);
 
+            console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
+
             try {
                 const response = await fetch('/api/series/episodes', {
                     method: 'POST',
@@ -41,6 +43,8 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
                 });
 
                 const data = await response.json();
+
+                console.log('[Episode Modal] Response:', data);
 
                 if (!response.ok) {
                     throw new Error(data.error || 'Failed to fetch episodes');
