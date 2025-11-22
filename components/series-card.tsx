@@ -35,35 +35,35 @@ export function SeriesCard({ series }: SeriesCardProps) {
         <>
             <div ref={elementRef} className="relative">
                 <GlassCard className="overflow-hidden hover:scale-[1.02] transition-transform relative">
-                    {/* Realistic lighting effect - multiple layers for depth */}
+                    {/* Realistic lighting effect - very subtle and gradual */}
                     {isHovering && (
                         <>
-                            {/* Ambient glow - covers entire card */}
+                            {/* Base ambient glow - very subtle across entire card */}
                             <div
                                 className="pointer-events-none absolute inset-0 z-10"
                                 style={{
-                                    background: `rgba(${dominantColor}, 0.08)`,
+                                    background: `rgba(${dominantColor}, 0.05)`,
                                 }}
                             />
-                            {/* Wide outer glow - very soft */}
+                            {/* Very wide outer glow - extremely soft */}
                             <div
                                 className="pointer-events-none absolute inset-0 z-10"
                                 style={{
-                                    background: `radial-gradient(circle 800px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.15), transparent 80%)`,
+                                    background: `radial-gradient(circle 1200px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.08), transparent 90%)`,
                                 }}
                             />
-                            {/* Medium glow - follows mouse */}
+                            {/* Wide middle glow - gentle */}
                             <div
                                 className="pointer-events-none absolute inset-0 z-10"
                                 style={{
-                                    background: `radial-gradient(circle 500px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.25), rgba(${dominantColor}, 0.08) 60%, transparent 80%)`,
+                                    background: `radial-gradient(circle 700px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.12), rgba(${dominantColor}, 0.04) 70%, transparent 90%)`,
                                 }}
                             />
-                            {/* Center highlight - brightest at mouse */}
+                            {/* Subtle center highlight - just slightly brighter at mouse */}
                             <div
                                 className="pointer-events-none absolute inset-0 z-10"
                                 style={{
-                                    background: `radial-gradient(circle 200px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.35), transparent 70%)`,
+                                    background: `radial-gradient(circle 300px at ${mousePosition.x}px ${mousePosition.y}px, rgba(${dominantColor}, 0.18), transparent 80%)`,
                                 }}
                             />
                         </>
