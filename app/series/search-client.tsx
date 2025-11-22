@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { GroupedMovie } from '@/lib/zt-client-enhanced';
-import { MovieCard } from '@/components/movie-card';
+import { SeriesCard } from '@/components/series-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Tv, Loader2 } from 'lucide-react';
@@ -120,7 +120,7 @@ export function SeriesSearchClient() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
                         {series.map((item) => (
-                            <MovieCard key={item.id} movie={item} />
+                            <SeriesCard key={item.id} series={item} />
                         ))}
                     </div>
                 </div>

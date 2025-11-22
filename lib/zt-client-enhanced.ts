@@ -205,6 +205,60 @@ class ZTClientEnhanced {
         }
     }
 
+    async getEpisodeLinks(detailPageUrl: string): Promise<{ episode: string; link: string }[]> {
+        try {
+            console.log(`[ZT] Fetching episode links from: ${detailPageUrl}`);
+
+            const response = await axios.get(detailPageUrl);
+            const $ = cheerio.load(response.data);
+
+            const episodes: { episode: string; link: string }[] = [];
+
+            // Look for the "1fichier" label, then collect episode links
+            let found1fichier = false;
+            let skipUntilNext1fichier = false;
+
+            $('*').each((_, el) => {
+                const text = $(el).text().trim();
+
+                // Reset if we hit another hosting service
+                if (found1fichier && (text === 'Rapidgator' || text === 'Turbobit' || text === 'Nitroflare' ||
+                    text === 'Uploady' || text === 'DailyUploads')) {
+                    skipUntilNext1fichier = true;
+                }
+
+                // Look for exact "1fichier" text
+                if (!found1fichier && text === '1fichier') {
+                    console.log(`[ZT] Found 1fichier label for episodes`);
+                    found1fichier = true;
+                    skipUntilNext1fichier = false;
+                    return;
+                }
+
+                // After finding 1fichier, collect episode links
+                if (found1fichier && !skipUntilNext1fichier && $(el).is('a')) {
+                    const href = $(el).attr('href');
+                    const linkText = $(el).text().trim();
+
+                    // Look for links with "Episode" in the text (e.g., "Episode 1", "Episode 2")
+                    if (href && href.includes('dl-protect.link') && linkText.toLowerCase().includes('episode')) {
+                        console.log(`[ZT] Found episode link: ${linkText} -> ${href}`);
+                        episodes.push({
+                            episode: linkText,
+                            link: href
+                        });
+                    }
+                }
+            });
+
+            console.log(`[ZT] Found ${episodes.length} episode links`);
+            return episodes;
+        } catch (error: any) {
+            console.error('[ZT] Failed to fetch episode links:', error.message);
+            return [];
+        }
+    }
+
     async getFileSize(detailPageUrl: string): Promise<string | undefined> {
         try {
             const response = await axios.get(detailPageUrl);
