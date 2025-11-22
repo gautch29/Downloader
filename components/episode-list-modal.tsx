@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Loader2 } from 'lucide-react';
@@ -24,44 +24,44 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
     const [episodes, setEpisodes] = useState<Episode[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [fetched, setFetched] = useState(false);
 
     // Fetch episodes when modal opens
-    const handleOpenChange = async (isOpen: boolean) => {
-        onOpenChange(isOpen);
-
-        if (isOpen && episodes.length === 0) {
+    useEffect(() => {
+        if (open && !fetched) {
             setLoading(true);
             setError(null);
 
             console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
 
-            try {
-                const response = await fetch('/api/series/episodes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: detailPageUrl })
+            fetch('/api/series/episodes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: detailPageUrl })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('[Episode Modal] Response:', data);
+
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    setEpisodes(data.episodes || []);
+                    setFetched(true);
+                })
+                .catch(err => {
+                    console.error('Episode fetch error:', err);
+                    setError(err.message || 'Failed to fetch episodes');
+                })
+                .finally(() => {
+                    setLoading(false);
                 });
-
-                const data = await response.json();
-
-                console.log('[Episode Modal] Response:', data);
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to fetch episodes');
-                }
-
-                setEpisodes(data.episodes || []);
-            } catch (err: any) {
-                console.error('Episode fetch error:', err);
-                setError(err.message || 'Failed to fetch episodes');
-            } finally {
-                setLoading(false);
-            }
         }
-    };
+    }, [open, fetched, detailPageUrl]);
 
     return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">
