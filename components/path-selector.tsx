@@ -59,7 +59,7 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
 
     return (
         <div className="space-y-2">
-            <input type="hidden" name="targetPath" value={effectivePath} />
+
 
             <div className="flex items-center h-8">
                 <label className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
@@ -128,6 +128,8 @@ export function PathSelector({ shortcuts }: PathSelectorProps) {
                     />
                 </div>
             )}
+
+            <input type="hidden" name="targetPath" value={effectivePath} />
 
             <FolderBrowserModal
                 isOpen={isBrowserOpen}
