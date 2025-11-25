@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { changePasswordAction } from './actions';
+import { useState, useEffect } from 'react';
+import { changePasswordAction, getSettingsAction, updateSettingsAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
-import { getSettingsAction, updateSettingsAction, getStorageInfoAction, type StorageInfo } from './actions';
 import { GlassCard } from '@/components/ui/glass-card';
 import { useI18n } from '@/lib/i18n';
 
@@ -20,7 +18,6 @@ export default function SettingsPage() {
     const [plexSuccess, setPlexSuccess] = useState(false);
     const [plexLoading, setPlexLoading] = useState(false);
     const [plexSettings, setPlexSettings] = useState<{ plexUrl: string; plexToken: string } | null>(null);
-    const [storageInfo, setStorageInfo] = useState<StorageInfo[]>([]);
 
     // Fetch settings on mount
     useEffect(() => {
@@ -31,10 +28,6 @@ export default function SettingsPage() {
                     plexToken: settings.plexToken || ''
                 });
             }
-        });
-
-        getStorageInfoAction().then(info => {
-            setStorageInfo(info);
         });
     }, []);
 
@@ -82,40 +75,6 @@ export default function SettingsPage() {
                     {t('nav.back')}
                 </Link>
             </div>
-
-            <GlassCard className="mb-8">
-                <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
-                    <span className="h-8 w-1 rounded-full bg-[#0071E3] dark:bg-[#0A84FF]"></span>
-                    {t('settings.storage.title') || 'Storage'}
-                </h1>
-
-                <div className="space-y-6">
-                    {storageInfo.length === 0 ? (
-                        <p className="text-zinc-500 dark:text-zinc-400 text-sm">Loading storage info...</p>
-                    ) : (
-                        storageInfo.map((disk) => (
-                            <div key={disk.path} className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium text-zinc-700 dark:text-zinc-300">{disk.name}</span>
-                                    <span className="text-zinc-500 dark:text-zinc-400">
-                                        {formatBytes(disk.used)} / {formatBytes(disk.total)}
-                                    </span>
-                                </div>
-                                <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full transition-all duration-500 ${disk.percent > 90 ? 'bg-red-500' :
-                                                disk.percent > 75 ? 'bg-amber-500' :
-                                                    'bg-[#0071E3] dark:bg-[#0A84FF]'
-                                            }`}
-                                        style={{ width: `${disk.percent}%` }}
-                                    />
-                                </div>
-                                <p className="text-xs text-zinc-400 dark:text-zinc-500 font-mono">{disk.path}</p>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </GlassCard>
 
             <GlassCard className="mb-8">
                 <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-8 flex items-center gap-3">
@@ -269,14 +228,4 @@ export default function SettingsPage() {
 }
 
 
-function formatBytes(bytes: number, decimals = 2) {
-    if (!+bytes) return '0 Bytes';
 
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-}

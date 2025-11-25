@@ -1,13 +1,14 @@
 'use client';
 
-import { addDownload } from './actions';
+import { addDownload, getZfsStorageInfo, type StorageInfo } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DownloadCard } from '@/components/download-card';
 import { PathShortcutsModal } from '@/components/path-shortcuts-modal';
 import { PathSelector } from '@/components/path-selector';
 import { AutoRefresh } from '@/components/auto-refresh';
-import { Plus, Download, Sparkles } from 'lucide-react';
+import { Plus, Download, Sparkles, HardDrive } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { GlassCard } from '@/components/ui/glass-card';
 import { useI18n } from '@/lib/i18n';
 
@@ -18,10 +19,50 @@ interface HomeClientProps {
 
 export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
     const { t } = useI18n();
+    const [storageInfo, setStorageInfo] = useState<StorageInfo[]>([]);
+
+    useEffect(() => {
+        getZfsStorageInfo().then(setStorageInfo);
+    }, []);
 
     return (
         <div className="container mx-auto p-4 md:p-6 max-w-5xl space-y-6 md:space-y-12">
             <AutoRefresh />
+
+            {/* Storage Section */}
+            <section className="animate-fade-in-up">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {storageInfo.map((disk) => (
+                        <GlassCard key={disk.path} className="p-4 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <HardDrive className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                                    <span className="font-medium text-sm text-zinc-900 dark:text-white">{disk.name}</span>
+                                </div>
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+                                    {Math.round(disk.percent)}%
+                                </span>
+                            </div>
+
+                            <div className="space-y-1">
+                                <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-500 ${disk.percent > 90 ? 'bg-red-500' :
+                                                disk.percent > 75 ? 'bg-amber-500' :
+                                                    'bg-[#0071E3] dark:bg-[#0A84FF]'
+                                            }`}
+                                        style={{ width: `${disk.percent}%` }}
+                                    />
+                                </div>
+                                <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                                    <span>{formatBytes(disk.used)} used</span>
+                                    <span>{formatBytes(disk.free)} free</span>
+                                </div>
+                            </div>
+                        </GlassCard>
+                    ))}
+                </div>
+            </section>
 
             {/* Hero / Add Section */}
             <section className="relative animate-fade-in-up">
@@ -114,4 +155,16 @@ export function HomeClient({ downloads, pathShortcuts }: HomeClientProps) {
             </section>
         </div>
     );
+}
+
+function formatBytes(bytes: number, decimals = 2) {
+    if (!+bytes) return '0 B';
+
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
 }
