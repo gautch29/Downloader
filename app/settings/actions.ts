@@ -79,3 +79,61 @@ export async function getSettingsAction() {
     }
     return getSettingsDb();
 }
+
+import { getPathShortcuts } from '@/lib/path-config';
+import fs from 'fs';
+
+export interface StorageInfo {
+    name: string;
+    path: string;
+    total: number;
+    free: number;
+    used: number;
+    percent: number;
+}
+
+export async function getStorageInfoAction(): Promise<StorageInfo[]> {
+    const userId = await getSession();
+    if (!userId) {
+        return [];
+    }
+
+    const shortcuts = getPathShortcuts();
+    const storageInfos: StorageInfo[] = [];
+
+    // Filter out shortcuts with empty paths or that are just "Downloads" if it's not a mount
+    // For now, let's check all configured paths that are absolute
+    const validShortcuts = shortcuts.filter(s => s.path && s.path.startsWith('/'));
+
+    for (const shortcut of validShortcuts) {
+        try {
+            // Use fs.statfs to get filesystem stats
+            // We need to wrap it in a promise since it's callback-based in some node versions or just to be safe
+            const stats = await new Promise<fs.StatsFs>((resolve, reject) => {
+                fs.statfs(shortcut.path, (err, stats) => {
+                    if (err) reject(err);
+                    else resolve(stats);
+                });
+            });
+
+            const total = stats.blocks * stats.bsize;
+            const free = stats.bfree * stats.bsize; // Free blocks available to non-privileged user
+            const used = total - free;
+            const percent = total > 0 ? (used / total) * 100 : 0;
+
+            storageInfos.push({
+                name: shortcut.name,
+                path: shortcut.path,
+                total,
+                free,
+                used,
+                percent
+            });
+        } catch (error) {
+            console.error(`Failed to get storage info for ${shortcut.path}:`, error);
+            // Skip this path if we can't read it
+        }
+    }
+
+    return storageInfos;
+}

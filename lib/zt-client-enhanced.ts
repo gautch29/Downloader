@@ -145,9 +145,7 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // Look specifically for the "1fichier" label (not Rapidgator, Turbobit, etc.)
-            // Then get the Télécharger links that come after it
-
+            // Strategy 1: Look for 1fichier section with any dl-protect links
             let found1fichier = false;
             let skipUntilNext1fichier = false;
 
@@ -170,12 +168,12 @@ class ZTClientEnhanced {
                     return;
                 }
 
-                // After finding 1fichier and before hitting another service, collect Télécharger links
+                // After finding 1fichier and before hitting another service, collect dl-protect links
                 if (found1fichier && !skipUntilNext1fichier && $(el).is('a')) {
                     const href = $(el).attr('href');
-                    const linkText = $(el).text().trim();
 
-                    if (href && href.includes('dl-protect.link') && linkText === 'Télécharger') {
+                    // Accept any dl-protect link in the 1fichier section
+                    if (href && href.includes('dl-protect.link')) {
                         console.log(`[ZT] Found 1fichier download link: ${href}`);
                         links.push(href);
                     }
@@ -187,8 +185,8 @@ class ZTClientEnhanced {
                 return links;
             }
 
-            // Fallback
-            console.log('[ZT] No 1fichier section found, using fallback');
+            // Strategy 2: Fallback - get all dl-protect links
+            console.log('[ZT] No 1fichier section found or no links in section, using fallback');
             $('a[href*="dl-protect.link"]').each((_, element) => {
                 const href = $(element).attr('href');
                 if (href) {
