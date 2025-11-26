@@ -1,7 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { GroupedMovie } from '@/lib/zt-client-enhanced';
+export type GroupedMovie = {
+    id: string;
+    title: string;
+    year?: string;
+    quality?: string;
+    language?: string;
+    poster?: string;
+    links: string[];
+    qualities: { quality: string; language: string; fileSize?: string; url: string }[];
+};
 import { Tv, List } from 'lucide-react';
 import { Button } from './ui/button';
 import { GlassCard } from './ui/glass-card';

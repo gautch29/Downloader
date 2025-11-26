@@ -5,7 +5,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Folder, FolderInput, FolderSearch } from 'lucide-react';
-import type { PathShortcut } from '@/lib/path-config';
+
+export type PathShortcut = {
+    id: string;
+    name: string;
+    path: string;
+};
+
 import { useI18n } from '@/lib/i18n';
 
 import { FolderBrowserModal } from './folder-browser-modal';

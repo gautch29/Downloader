@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { clearSession } from '@/lib/session';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function POST(request: NextRequest) {
     try {
-        await clearSession();
+        await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            headers: { 'Cookie': request.headers.get('cookie') || '' }
+        });
 
-        return NextResponse.json({ success: true });
+        const response = NextResponse.json({ success: true });
+        response.cookies.delete('session_id');
+        return response;
     } catch (error) {
         return NextResponse.json(
             { error: 'Logout failed' },

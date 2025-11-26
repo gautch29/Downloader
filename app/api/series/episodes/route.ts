@@ -1,23 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ztClientEnhanced } from '@/lib/zt-client-enhanced';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function POST(request: NextRequest) {
     try {
         const { url } = await request.json();
 
-        console.log('[Episode API] Received URL:', url);
-
         if (!url) {
             return NextResponse.json({ error: 'URL is required' }, { status: 400 });
         }
 
-        const episodes = await ztClientEnhanced.getEpisodeLinks(url);
+        const response = await fetch(`${API_URL}/movies/episodes`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': request.headers.get('cookie') || ''
+            },
+            body: JSON.stringify({ url })
+        });
 
-        console.log('[Episode API] Found episodes:', episodes.length);
+        if (!response.ok) {
+            return NextResponse.json({ error: 'Failed to fetch episodes' }, { status: response.status });
+        }
 
-        return NextResponse.json({ episodes });
+        const data = await response.json();
+        // Swift returns { links: [] }, Frontend expects { episodes: [] }
+        // Assuming links are episodes for now.
+        return NextResponse.json({ episodes: data.links });
     } catch (error: any) {
-        console.error('Episode fetch error:', error);
-        return NextResponse.json({ error: 'Failed to fetch episodes' }, { status: 500 });
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

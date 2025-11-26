@@ -1,9 +1,8 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { downloads } from '@/db/schema';
 import { revalidatePath } from 'next/cache';
-import { desc } from 'drizzle-orm';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function addDownload(formData: FormData) {
     const url = formData.get('url') as string;
@@ -14,18 +13,46 @@ export async function addDownload(formData: FormData) {
         throw new Error('URL is required');
     }
 
-    await db.insert(downloads).values({
-        url,
-        customFilename: customFilename || null,
-        targetPath: targetPath || null,
-        status: 'pending',
-    });
+    try {
+        const response = await fetch(`${API_URL}/downloads`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                url,
+                customFilename: customFilename || null,
+                targetPath: targetPath || null,
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to add download: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Failed to add download:', error);
+        throw error;
+    }
 
     revalidatePath('/');
 }
 
 export async function getDownloads() {
-    return await db.select().from(downloads).orderBy(desc(downloads.createdAt));
+    try {
+        const response = await fetch(`${API_URL}/downloads`, {
+            cache: 'no-store',
+        });
+
+        if (!response.ok) {
+            console.error('Failed to fetch downloads:', response.statusText);
+            return [];
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Failed to fetch downloads:', error);
+        return [];
+    }
 }
 
 import fs from 'fs';

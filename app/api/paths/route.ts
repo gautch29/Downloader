@@ -1,89 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
-import { getPathShortcuts, addPathShortcut, deletePathShortcut } from '@/lib/path-config';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
+        const response = await fetch(`${API_URL}/paths`, {
+            headers: { 'Cookie': request.headers.get('cookie') || '' }
+        });
+
+        if (!response.ok) {
+            return NextResponse.json({ error: 'Failed to fetch paths' }, { status: response.status });
         }
 
-        const paths = await getPathShortcuts();
-
-        return NextResponse.json({ paths });
+        const data = await response.json();
+        // Swift returns array directly, wrap it if needed or adjust frontend
+        // Swift: [Path], Frontend expects { paths: [] }
+        return NextResponse.json({ paths: data });
     } catch (error: any) {
-        console.error('[API] Get paths error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to fetch paths' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
         const body = await request.json();
-        const { name, path } = body;
+        const response = await fetch(`${API_URL}/paths`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': request.headers.get('cookie') || ''
+            },
+            body: JSON.stringify(body)
+        });
 
-        if (!name || !path) {
-            return NextResponse.json(
-                { error: 'Name and path are required' },
-                { status: 400 }
-            );
+        if (!response.ok) {
+            return NextResponse.json({ error: 'Failed to create path' }, { status: response.status });
         }
-
-        await addPathShortcut(name, path);
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('[API] Add path error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to add path' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
 
 export async function DELETE(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
         const { searchParams } = new URL(request.url);
         const name = searchParams.get('name');
 
-        if (!name) {
-            return NextResponse.json(
-                { error: 'Name is required' },
-                { status: 400 }
-            );
-        }
+        const response = await fetch(`${API_URL}/paths?name=${name}`, {
+            method: 'DELETE',
+            headers: { 'Cookie': request.headers.get('cookie') || '' }
+        });
 
-        await deletePathShortcut(name);
+        if (!response.ok) {
+            return NextResponse.json({ error: 'Failed to delete path' }, { status: response.status });
+        }
 
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('[API] Delete path error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to delete path' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

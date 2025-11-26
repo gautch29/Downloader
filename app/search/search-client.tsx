@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 // import { searchMoviesAction } from './actions'; // No longer used
-import { GroupedMovie } from '@/lib/zt-client-enhanced';
+export type GroupedMovie = {
+    id: string;
+    title: string;
+    year?: string;
+    quality?: string;
+    language?: string;
+    poster?: string;
+    links: string[];
+    qualities: { quality: string; language: string; fileSize?: string; url: string }[];
+};
 import { MovieCard } from '@/components/movie-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

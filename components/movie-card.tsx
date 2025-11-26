@@ -1,7 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { GroupedMovie } from '@/lib/zt-client-enhanced';
+export type GroupedMovie = {
+    id: string;
+    title: string;
+    year?: string;
+    quality?: string;
+    language?: string;
+    poster?: string;
+    links: string[];
+    qualities: { quality: string; language: string; fileSize?: string; url: string }[];
+    inPlex?: boolean;
+};
 import { add1fichierDownloadAction } from '../app/search/actions';
 // import { getDownloadLinksAction } from '../app/search/actions'; // No longer used
 import { Download, Film, Loader2, ChevronDown } from 'lucide-react';

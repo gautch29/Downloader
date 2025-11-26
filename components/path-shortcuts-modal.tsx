@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Settings, Plus, Trash2 } from 'lucide-react';
 import { addPathShortcutAction, deletePathShortcutAction, getPathShortcutsAction } from '@/app/paths/actions';
-import type { PathShortcut } from '@/lib/path-config';
+import { PathShortcut } from './path-selector';
 import { useI18n } from '@/lib/i18n';
 
 interface PathShortcutsModalProps {

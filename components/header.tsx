@@ -1,19 +1,29 @@
 import { HeaderClient } from './header-client';
-import { getSession } from '@/lib/session';
-import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { cookies } from 'next/headers';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function Header() {
-    // Get current user
-    const userId = await getSession();
     let username = 'User';
 
-    if (userId) {
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, userId),
-        });
-        if (user) username = user.username;
+    try {
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('session_id')?.value;
+
+        if (sessionId) {
+            const response = await fetch(`${API_URL}/auth/session`, {
+                headers: { 'Cookie': `session_id=${sessionId}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.authenticated && data.user) {
+                    username = data.user.username;
+                }
+            }
+        }
+    } catch (e) {
+        // Ignore error
     }
 
     return <HeaderClient username={username} />;

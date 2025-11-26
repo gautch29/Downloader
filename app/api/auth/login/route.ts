@@ -1,49 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { setSession } from '@/lib/session';
-import { getUserByUsername, verifyPassword as verifyPasswordHash, createSession } from '@/lib/auth';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { username, password } = body;
 
-        if (!username || !password) {
-            return NextResponse.json(
-                { error: 'Username and password are required' },
-                { status: 400 }
-            );
-        }
-
-        // Get user from database
-        const user = await getUserByUsername(username);
-
-        if (!user) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
-
-        // Verify password
-        const isValid = await verifyPasswordHash(password, user.passwordHash);
-
-        if (!isValid) {
-            return NextResponse.json(
-                { error: 'Invalid credentials' },
-                { status: 401 }
-            );
-        }
-
-        // Create session in database
-        const sessionId = await createSession(user.id);
-
-        // Set session cookie
-        await setSession(sessionId);
-
-        return NextResponse.json({
-            success: true,
-            user: { username: user.username }
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
         });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return NextResponse.json(
+                { error: data.reason || 'Login failed' },
+                { status: response.status }
+            );
+        }
+
+        const nextResponse = NextResponse.json(data);
+
+        // Forward Set-Cookie header
+        const setCookie = response.headers.get('set-cookie');
+        if (setCookie) {
+            nextResponse.headers.set('Set-Cookie', setCookie);
+        }
+
+        return nextResponse;
     } catch (error: any) {
         console.error('[API] Login error:', error);
         return NextResponse.json(

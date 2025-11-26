@@ -1,0 +1,45 @@
+import Fluent
+import FluentSQLiteDriver
+import Vapor
+
+// config/configure.swift
+public func configure(_ app: Application) async throws {
+    // Serves files from /Public folder
+    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
+
+    // Configure SQLite
+    // We'll use the same data directory logic as the Node app
+    let workingDir = app.directory.workingDirectory
+    let envDataDir = Environment.get("DATA_DIR")
+    app.logger.info("DATA_DIR env: \(String(describing: envDataDir))")
+    
+    // Go up two levels: backend -> Downloader -> Documents -> downloader-data
+    let dataDir = envDataDir ?? URL(fileURLWithPath: workingDir)
+        .deletingLastPathComponent() // Downloader
+        .deletingLastPathComponent() // Documents
+        .appendingPathComponent("downloader-data").path
+        
+    let dbPath = "\(dataDir)/downloader.db"
+    
+    app.logger.info("Using database at: \(dbPath)")
+    
+    app.databases.use(.sqlite(.file(dbPath)), as: .sqlite)
+
+    // Register migrations
+    app.migrations.add(CreateDownloads())
+    app.migrations.add(CreateUsers())
+    app.migrations.add(CreateSessions())
+    app.migrations.add(CreateSettings())
+    app.migrations.add(CreatePaths())
+    
+    // Initialize DownloadManager
+    let downloadManager = DownloadManager(app: app)
+    app.storage[DownloadManagerKey.self] = downloadManager
+    
+    // register routes
+    try routes(app)
+}
+
+struct DownloadManagerKey: StorageKey {
+    typealias Value = DownloadManager
+}

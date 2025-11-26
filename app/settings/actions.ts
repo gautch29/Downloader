@@ -1,11 +1,9 @@
 'use server';
 
-import { getSession } from '@/lib/session';
-import { db } from '@/lib/db';
-import { users } from '@/db/schema';
-import { eq } from 'drizzle-orm';
-import { hashPassword, verifyPassword } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function changePasswordAction(formData: FormData) {
     const currentPassword = formData.get('currentPassword') as string;
@@ -24,47 +22,52 @@ export async function changePasswordAction(formData: FormData) {
         return { error: 'Password must be at least 6 characters' };
     }
 
-    const userId = await getSession();
-    if (!userId) {
-        return { error: 'Not authenticated' };
+    try {
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('session_id')?.value;
+
+        const response = await fetch(`${API_URL}/auth/password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': `session_id=${sessionId}`
+            },
+            body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            return { error: data.reason || 'Failed to change password' };
+        }
+
+        revalidatePath('/');
+        return { success: true };
+    } catch (error: any) {
+        return { error: 'Failed to change password: ' + error.message };
     }
-
-    const user = await db.query.users.findFirst({
-        where: eq(users.id, userId),
-    });
-
-    if (!user) {
-        return { error: 'User not found' };
-    }
-
-    const isValid = await verifyPassword(currentPassword, user.passwordHash);
-    if (!isValid) {
-        return { error: 'Current password is incorrect' };
-    }
-
-    const newPasswordHash = await hashPassword(newPassword);
-
-    await db.update(users)
-        .set({ passwordHash: newPasswordHash })
-        .where(eq(users.id, userId));
-
-    revalidatePath('/');
-    return { success: true };
 }
-
-import { updateSettings, getSettings as getSettingsDb } from '@/lib/settings';
 
 export async function updateSettingsAction(formData: FormData) {
     const plexUrl = formData.get('plexUrl') as string;
     const plexToken = formData.get('plexToken') as string;
 
-    const userId = await getSession();
-    if (!userId) {
-        return { error: 'Not authenticated' };
-    }
-
     try {
-        await updateSettings(plexUrl, plexToken);
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('session_id')?.value;
+
+        const response = await fetch(`${API_URL}/settings`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cookie': `session_id=${sessionId}`
+            },
+            body: JSON.stringify({ plexUrl, plexToken })
+        });
+
+        if (!response.ok) {
+            return { error: 'Failed to update settings' };
+        }
+
         revalidatePath('/settings');
         return { success: true };
     } catch (error: any) {
@@ -73,11 +76,26 @@ export async function updateSettingsAction(formData: FormData) {
 }
 
 export async function getSettingsAction() {
-    const userId = await getSession();
-    if (!userId) {
+    try {
+        const cookieStore = await cookies();
+        const sessionId = cookieStore.get('session_id')?.value;
+
+        const response = await fetch(`${API_URL}/settings`, {
+            headers: { 'Cookie': `session_id=${sessionId}` }
+        });
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        // Return raw settings for the form (including token if needed, but usually we don't send token back to client for security unless necessary for edit)
+        // The previous implementation returned { plexUrl, plexToken }
+        return {
+            plexUrl: data.plexUrl,
+            plexToken: data.plexToken
+        };
+    } catch (error) {
         return null;
     }
-    return getSettingsDb();
 }
 
 

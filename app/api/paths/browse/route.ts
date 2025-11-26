@@ -1,77 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
-import { getPathShortcuts } from '@/lib/path-config';
-import fs from 'fs';
-import path from 'path';
+
+const API_URL = 'http://localhost:8080/api';
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getSession();
-        if (!session) {
-            return NextResponse.json(
-                { error: 'Unauthorized' },
-                { status: 401 }
-            );
-        }
-
         const { searchParams } = new URL(request.url);
-        const requestedPath = searchParams.get('path');
+        const path = searchParams.get('path');
 
-        if (!requestedPath) {
-            return NextResponse.json(
-                { error: 'Path is required' },
-                { status: 400 }
-            );
-        }
-
-        // Security check: Ensure the requested path is within one of the allowed root paths
-        const shortcuts = await getPathShortcuts();
-        const allowedRoots = shortcuts.map(s => s.path);
-
-        // Normalize paths for comparison
-        const normalizedRequested = path.resolve(requestedPath);
-
-        const isAllowed = allowedRoots.some(root => {
-            const normalizedRoot = path.resolve(root);
-            return normalizedRequested.startsWith(normalizedRoot);
+        const response = await fetch(`${API_URL}/paths/browse?path=${path}`, {
+            headers: { 'Cookie': request.headers.get('cookie') || '' }
         });
 
-        if (!isAllowed) {
-            return NextResponse.json(
-                { error: 'Access denied: Path is not within allowed shortcuts' },
-                { status: 403 }
-            );
+        if (!response.ok) {
+            return NextResponse.json({ error: 'Failed to browse path' }, { status: response.status });
         }
 
-        // Check if directory exists
-        if (!fs.existsSync(normalizedRequested)) {
-            return NextResponse.json(
-                { error: 'Directory not found' },
-                { status: 404 }
-            );
-        }
+        const items = await response.json();
+        // Swift returns [FileItem], Frontend expects { currentPath, folders: [] }
+        // We need to adapt the response.
 
-        // Read directory contents
-        const items = fs.readdirSync(normalizedRequested, { withFileTypes: true });
-
-        const folders = items
-            .filter(item => item.isDirectory() && !item.name.startsWith('.'))
-            .map(item => ({
-                name: item.name,
-                path: path.join(normalizedRequested, item.name)
-            }))
-            .sort((a, b) => a.name.localeCompare(b.name));
+        const folders = items.map((item: any) => ({
+            name: item.name,
+            path: item.path
+        }));
 
         return NextResponse.json({
-            currentPath: normalizedRequested,
+            currentPath: path,
             folders
         });
-
     } catch (error: any) {
-        console.error('[API] Browse path error:', error);
-        return NextResponse.json(
-            { error: error.message || 'Failed to browse path' },
-            { status: 500 }
-        );
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
