@@ -19,9 +19,7 @@ actor DownloadManager {
         // Ensure download directory exists
         try? FileManager.default.createDirectory(atPath: downloadDir, withIntermediateDirectories: true)
         
-        Task {
-            await self.startWorker()
-        }
+
     }
 
     func startWorker() async {

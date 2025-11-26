@@ -41,8 +41,21 @@ public func configure(_ app: Application) async throws {
     
     // register routes
     try routes(app)
+    
+    // Start worker on boot
+    app.lifecycle.use(DownloadWorkerLifecycle())
 }
 
 struct DownloadManagerKey: StorageKey {
     typealias Value = DownloadManager
+}
+
+struct DownloadWorkerLifecycle: LifecycleHandler {
+    func didBoot(_ application: Application) throws {
+        if let manager = application.storage[DownloadManagerKey.self] {
+            Task {
+                await manager.startWorker()
+            }
+        }
+    }
 }
