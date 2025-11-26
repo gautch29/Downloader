@@ -29,6 +29,7 @@ export async function getDownloads() {
 }
 
 import fs from 'fs';
+import { getConfig } from '@/lib/config';
 
 export interface StorageInfo {
     name: string;
@@ -40,12 +41,8 @@ export interface StorageInfo {
 }
 
 export async function getZfsStorageInfo(): Promise<StorageInfo[]> {
-    const paths = [
-        { name: 'PlexZFS', path: '/mnt/PlexZFS' },
-        { name: 'PlexZFS2', path: '/mnt/PlexZFS2' },
-        { name: 'PlexZFS3', path: '/mnt/PlexZFS3' },
-        { name: 'PlexZFS4', path: '/mnt/PlexZFS4' },
-    ];
+    const config = getConfig();
+    const paths = config.storage;
 
     const storageInfos: StorageInfo[] = [];
 

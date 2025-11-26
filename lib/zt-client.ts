@@ -1,4 +1,6 @@
+
 import ZTP from 'zt-film-api';
+import { getConfig } from '@/lib/config';
 
 // Zone-Telechargement client wrapper
 // Handles movie search and 1fichier link extraction
@@ -20,23 +22,25 @@ export interface SearchResult {
 
 class ZTClient {
     private initialized = false;
-    // Current ZT domain (Nov 2025) - update if ZT changes domains
-    private baseURL = 'https://zone-telechargement.irish';
 
     async initialize() {
         if (this.initialized) return;
 
         try {
+            const config = getConfig();
+            const baseURL = config.services.zoneTelechargement.baseUrl;
+
             // Use the explicit URL approach that works in test script
-            ZTP.useBaseURL(this.baseURL);
+            ZTP.useBaseURL(baseURL);
             this.initialized = true;
-            console.log(`[ZT] Client initialized with URL: ${this.baseURL}`);
+            console.log(`[ZT] Client initialized with URL: ${baseURL}`);
         } catch (error) {
             console.error('[ZT] Initialization warning:', error);
             // Continue anyway - search might still work
             this.initialized = true;
         }
     }
+
 
     async searchMovies(query: string): Promise<SearchResult> {
         await this.initialize();
