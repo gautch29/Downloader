@@ -44,6 +44,9 @@ public func configure(_ app: Application) async throws {
     
     // Start worker on boot
     app.lifecycle.use(DownloadWorkerLifecycle())
+    
+    // Register commands
+    app.commands.use(CreateUserCommand(), as: "create-user")
 }
 
 struct DownloadManagerKey: StorageKey {
