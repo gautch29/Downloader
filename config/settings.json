@@ -28,29 +28,19 @@
     },
     "downloadPaths": [
         {
-            "id": "downloads",
-            "name": "Downloads",
-            "path": ""
+            "id": "films",
+            "name": "Films",
+            "path": "/mnt/PlexZFS4/Films seuls"
         },
         {
-            "id": "movies",
-            "name": "Movies",
-            "path": "/mnt/media/Movies"
+            "id": "series",
+            "name": "Séries",
+            "path": "/mnt/PlexZFS2/séries"
         },
         {
-            "id": "tv",
-            "name": "TV Shows",
-            "path": "/mnt/media/TV"
-        },
-        {
-            "id": "music",
-            "name": "Music",
-            "path": "/mnt/media/Music"
-        },
-        {
-            "id": "documents",
-            "name": "Documents",
-            "path": "/mnt/media/Documents"
+            "id": "animes",
+            "name": "Animés",
+            "path": "/mnt/PlexZFS2/animés"
         }
     ]
 }
