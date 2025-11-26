@@ -71,18 +71,23 @@ struct AuthController: RouteCollection {
 
     func login(req: Request) async throws -> Response {
         let loginReq = try req.content.decode(LoginRequest.self)
+        req.logger.info("Login attempt for user: \(loginReq.username)")
         
         let authService = AuthService(db: req.db)
         
         guard let user = try await User.query(on: req.db)
             .filter(\.$username == loginReq.username)
             .first() else {
+            req.logger.warning("Login failed: User not found for username: \(loginReq.username)")
             throw Abort(.unauthorized, reason: "Invalid credentials")
         }
 
         guard try authService.verifyPassword(loginReq.password, hash: user.passwordHash) else {
+            req.logger.warning("Login failed: Invalid password for user: \(loginReq.username)")
             throw Abort(.unauthorized, reason: "Invalid credentials")
         }
+        
+        req.logger.info("Login successful for user: \(loginReq.username)")
 
         let session = try await authService.createSession(for: user)
         
