@@ -51,9 +51,16 @@ actor DownloadManager {
         try await download.save(on: app.db)
 
         do {
-            // 1. Get direct link (Mocking 1fichier logic for now, will implement ScraperService later)
-            // For now, assume URL is direct or handle simple cases
-            let directLink = download.url // Placeholder: Needs ScraperService integration
+            // 1. Get direct link
+            var directLink = download.url
+            
+            // If it's a 1fichier link, use ScraperService to get the direct link
+            if download.url.contains("1fichier.com") {
+                app.logger.info("Resolving 1fichier link...")
+                let scraper = ScraperService(client: app.client)
+                directLink = try await scraper.getDownloadLink(url: download.url)
+                app.logger.info("Resolved 1fichier link: \(directLink)")
+            }
 
             // 2. Start download
             try await downloadFile(download: download, from: directLink)
