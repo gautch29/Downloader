@@ -2,6 +2,8 @@ import Vapor
 import Fluent
 import Foundation
 import AsyncHTTPClient
+import NIO
+import NIOHTTP1
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -86,30 +88,36 @@ actor DownloadManager {
 
         // Use AsyncHTTPClient for streaming
         let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
-        defer { try? httpClient.syncShutdown() }
-
-        let request = try HTTPClient.Request(url: url)
         
-        let delegate = FileDownloadDelegate(
-            path: downloadDir,
-            download: download,
-            db: app.db,
-            logger: app.logger
-        )
-        
-        let response = try await httpClient.execute(
-            request: request,
-            delegate: delegate
-        ).get()
-        
-        if response.status != .ok {
-             throw Abort(.badRequest, reason: "Server returned error: \(response.status)")
-        }
-        
-        // Update filename from delegate if it was determined
-        if let filename = delegate.filename {
-            download.filename = filename
-            try await download.save(on: app.db)
+        do {
+            let request = try HTTPClient.Request(url: url)
+            
+            let delegate = FileDownloadDelegate(
+                path: downloadDir,
+                download: download,
+                db: app.db,
+                logger: app.logger
+            )
+            
+            let response = try await httpClient.execute(
+                request: request,
+                delegate: delegate
+            ).get()
+            
+            if response.status != .ok {
+                 throw Abort(.badRequest, reason: "Server returned error: \(response.status)")
+            }
+            
+            // Update filename from delegate if it was determined
+            if let filename = delegate.filename {
+                download.filename = filename
+                try await download.save(on: app.db)
+            }
+            
+            try await httpClient.shutdown()
+        } catch {
+            try? await httpClient.shutdown()
+            throw error
         }
     }
 }
@@ -161,7 +169,7 @@ class FileDownloadDelegate: HTTPClientResponseDelegate {
         self.filename = name
         
         let filePath = URL(fileURLWithPath: path).appendingPathComponent(name).path
-        FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil)
+        _ = FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil)
         self.fileHandle = FileHandle(forWritingAtPath: filePath)
         
         return task.eventLoop.makeSucceededFuture(())
