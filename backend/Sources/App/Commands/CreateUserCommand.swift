@@ -20,6 +20,6 @@ struct CreateUserCommand: Command {
         
         try user.save(on: context.application.db).wait()
         
-        context.console.print("User '\(signature.username)' created successfully!")
+        context.console.print("User '\(signature.username)' created successfully! ID: \(user.id ?? -1)")
     }
 }
