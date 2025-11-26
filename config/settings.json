@@ -25,5 +25,32 @@
             "url": "http://192.168.1.24:32400",
             "token": "TdC7bk6LsGisGJuzKYDb"
         }
-    }
+    },
+    "downloadPaths": [
+        {
+            "id": "downloads",
+            "name": "Downloads",
+            "path": ""
+        },
+        {
+            "id": "movies",
+            "name": "Movies",
+            "path": "/mnt/media/Movies"
+        },
+        {
+            "id": "tv",
+            "name": "TV Shows",
+            "path": "/mnt/media/TV"
+        },
+        {
+            "id": "music",
+            "name": "Music",
+            "path": "/mnt/media/Music"
+        },
+        {
+            "id": "documents",
+            "name": "Documents",
+            "path": "/mnt/media/Documents"
+        }
+    ]
 }

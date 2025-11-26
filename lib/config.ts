@@ -8,6 +8,12 @@ export interface ZfsPath {
     path: string;
 }
 
+export interface PathShortcut {
+    id: string;
+    name: string;
+    path: string;
+}
+
 export interface ServiceConfig {
     zoneTelechargement: {
         baseUrl: string;
@@ -21,6 +27,7 @@ export interface ServiceConfig {
 export interface AppConfig {
     storage: ZfsPath[];
     services: ServiceConfig;
+    downloadPaths: PathShortcut[];
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -39,6 +46,13 @@ const DEFAULT_CONFIG: AppConfig = {
             token: '',
         },
     },
+    downloadPaths: [
+        { id: 'downloads', name: 'Downloads', path: '' },
+        { id: 'movies', name: 'Movies', path: '/mnt/media/Movies' },
+        { id: 'tv', name: 'TV Shows', path: '/mnt/media/TV' },
+        { id: 'music', name: 'Music', path: '/mnt/media/Music' },
+        { id: 'documents', name: 'Documents', path: '/mnt/media/Documents' },
+    ],
 };
 
 function ensureConfigExists() {
@@ -72,7 +86,8 @@ export function getConfig(): AppConfig {
                     ...DEFAULT_CONFIG.services.plex,
                     ...config.services?.plex,
                 }
-            }
+            },
+            downloadPaths: config.downloadPaths || DEFAULT_CONFIG.downloadPaths,
         };
     } catch (error) {
         console.error('Failed to read config file:', error);
@@ -108,4 +123,33 @@ export function updateServiceConfig(service: keyof ServiceConfig, updates: Parti
         }
     };
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(newConfig, null, 4));
+}
+
+// Helper functions for download paths to replace lib/path-config.ts
+export function getPathShortcuts(): PathShortcut[] {
+    return getConfig().downloadPaths;
+}
+
+export function addPathShortcut(name: string, pathValue: string): void {
+    const config = getConfig();
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    const newPaths = [...config.downloadPaths, { id, name, path: pathValue }];
+    updateConfig({ downloadPaths: newPaths });
+}
+
+export function deletePathShortcut(id: string): void {
+    const config = getConfig();
+    const newPaths = config.downloadPaths.filter(s => s.id !== id);
+    updateConfig({ downloadPaths: newPaths });
+}
+
+export function updatePathShortcut(id: string, name: string, pathValue: string): void {
+    const config = getConfig();
+    const newPaths = config.downloadPaths.map(s => {
+        if (s.id === id) {
+            return { ...s, name, path: pathValue };
+        }
+        return s;
+    });
+    updateConfig({ downloadPaths: newPaths });
 }

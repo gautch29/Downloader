@@ -70,6 +70,12 @@ A modern, full-stack download manager with movie search integration, built with 
    # Edit .env with your settings
    ```
 
+4. **Configure application settings**
+   ```bash
+   cp config/settings.example.json config/settings.json
+   # Edit config/settings.json with your ZFS paths, Plex details, and download locations
+   ```
+
 4. **Initialize database**
    ```bash
    npm run init-db
@@ -148,7 +154,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is private and proprietary.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
