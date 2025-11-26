@@ -19,6 +19,9 @@ public func configure(_ app: Application) async throws {
         .deletingLastPathComponent() // Documents
         .appendingPathComponent("downloader-data").path
         
+    // Ensure data directory exists
+    try? FileManager.default.createDirectory(atPath: dataDir, withIntermediateDirectories: true)
+        
     let dbPath = "\(dataDir)/downloader.db"
     
     app.logger.info("Using database at: \(dbPath)")
