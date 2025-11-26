@@ -418,6 +418,155 @@ curl -X POST http://localhost:3000/api/movies/links \
 
 ---
 
+### 6. Series Search
+
+#### POST `/api/series/search`
+Search for series on Zone-Telechargement.
+
+**Request Body:**
+```json
+{
+  "query": "string (required)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "movies": [
+    {
+      "id": "string",
+      "title": "string",
+      "cleanTitle": "string",
+      "year": "string",
+      "poster": "string",
+      "inPlex": boolean,
+      "qualities": [
+        {
+          "quality": "string",
+          "language": "string",
+          "url": "string",
+          "fileSize": "string",
+          "links": []
+        }
+      ]
+    }
+  ],
+  "total": number
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/series/search \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"query":"Pluribus"}'
+```
+
+---
+
+#### POST `/api/series/episodes`
+Get episode links for a specific series quality.
+
+**Request Body:**
+```json
+{
+  "url": "string (required - detail page URL)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "episodes": [
+    {
+      "episode": "string (e.g., 'Episode 1')",
+      "link": "string (dl-protect link)"
+    }
+  ]
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/series/episodes \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"url":"https://zone-telechargement.irish?p=serie&id=..."}'
+```
+
+---
+
+### 7. Utilities
+
+#### POST `/api/extract-color`
+Extract the dominant color from an image URL (used for UI glow effects).
+
+**Request Body:**
+```json
+{
+  "imageUrl": "string (required)"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "color": "string (e.g., '224, 196, 64')"
+}
+```
+
+**Example:**
+```bash
+curl -X POST http://localhost:3000/api/extract-color \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"imageUrl":"https://example.com/poster.jpg"}'
+```
+
+---
+
+### 8. Plex Integration (Planned)
+
+To check if a series exists in Plex and identify missing episodes, the following approach is recommended:
+
+#### Check Series Status
+**Endpoint:** `GET /api/plex/series/{title}`
+
+**Logic:**
+1.  **Search Plex:** Query the Plex Media Server API for the series title.
+    *   `GET /library/sections/{sectionId}/all?type=2&title={title}`
+2.  **Match:** If a match is found, retrieve the `ratingKey` (Series ID).
+3.  **Get Details:** Fetch metadata for the series.
+    *   `GET /library/metadata/{ratingKey}`
+    *   Returns `leafCount` (total episodes) and `childCount` (total seasons).
+4.  **Get Episodes:** Fetch all episodes to see exactly what is available.
+    *   `GET /library/metadata/{ratingKey}/allLeaves`
+    *   Iterate through the results to build a map of `S{season}E{episode}`.
+
+**Response Structure:**
+```json
+{
+  "exists": true,
+  "ratingKey": "12345",
+  "title": "Pluribus",
+  "year": 2024,
+  "totalEpisodes": 8,
+  "seasons": [
+    {
+      "season": 1,
+      "episodes": [1, 2, 3, 4, 5, 6, 7, 8]
+    }
+  ],
+  "missingEpisodes": [] // Calculated by comparing with expected episode count (requires external metadata source like TMDB)
+}
+```
+
+*Note: Determining "missing" episodes accurately requires comparing Plex inventory against a definitive source of truth (like TMDB or TVDB).*
+
+---
+
 ## Error Handling
 
 All endpoints follow a consistent error response format:

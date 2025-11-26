@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { changePasswordAction } from './actions';
+import { useState, useEffect } from 'react';
+import { changePasswordAction, getSettingsAction, updateSettingsAction } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect } from 'react';
-import { getSettingsAction, updateSettingsAction } from './actions';
 import { GlassCard } from '@/components/ui/glass-card';
 import { useI18n } from '@/lib/i18n';
 
@@ -228,4 +226,6 @@ export default function SettingsPage() {
         </div>
     );
 }
+
+
 

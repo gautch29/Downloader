@@ -46,20 +46,12 @@ class ZTClientEnhanced {
     }
 
     async searchMovies(query: string): Promise<SearchResult> {
-        return this.search(query, 'films');
-    }
-
-    async searchSeries(query: string): Promise<SearchResult> {
-        return this.search(query, 'series');
-    }
-
-    private async search(query: string, category: 'films' | 'series'): Promise<SearchResult> {
         await this.initialize();
 
         try {
-            console.log(`[ZT] Searching for ${category}: ${query}`);
+            console.log(`[ZT] Searching for: ${query}`);
 
-            const results = await ZTP.search(category, query);
+            const results = await ZTP.search('films', query);
 
             if (!results || !Array.isArray(results)) {
                 return { movies: [], total: 0 };
@@ -100,14 +92,14 @@ class ZTClientEnhanced {
             }
 
             const groupedMovies = Array.from(movieMap.values());
-            console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} items`);
+            console.log(`[ZT] Grouped ${results.length} results into ${groupedMovies.length} movies`);
 
-            // Fetch file sizes for ALL qualities of first 10 items
-            const itemsToFetch = groupedMovies.slice(0, 10);
-            console.log(`[ZT] Fetching file sizes for ${itemsToFetch.length} items...`);
+            // Fetch file sizes for ALL qualities of first 10 movies
+            const moviesToFetch = groupedMovies.slice(0, 10);
+            console.log(`[ZT] Fetching file sizes for ${moviesToFetch.length} movies...`);
 
             await Promise.all(
-                itemsToFetch.flatMap((movie) =>
+                moviesToFetch.flatMap((movie) =>
                     movie.qualities.map(async (quality) => {
                         try {
                             const fileSize = await this.getFileSize(quality.url);
@@ -121,10 +113,8 @@ class ZTClientEnhanced {
                 )
             );
 
-            // Check Plex for each item (only for movies for now, series logic is different)
-            if (category === 'films') {
-                await this.checkPlexStatus(groupedMovies);
-            }
+            // Check Plex for each movie
+            await this.checkPlexStatus(groupedMovies);
 
             return {
                 movies: groupedMovies,
@@ -145,7 +135,9 @@ class ZTClientEnhanced {
 
             const links: string[] = [];
 
-            // Strategy 1: Look for 1fichier section with any dl-protect links
+            // Look specifically for the "1fichier" label (not Rapidgator, Turbobit, etc.)
+            // Then get the Télécharger links that come after it
+
             let found1fichier = false;
             let skipUntilNext1fichier = false;
 
@@ -168,12 +160,12 @@ class ZTClientEnhanced {
                     return;
                 }
 
-                // After finding 1fichier and before hitting another service, collect dl-protect links
+                // After finding 1fichier and before hitting another service, collect Télécharger links
                 if (found1fichier && !skipUntilNext1fichier && $(el).is('a')) {
                     const href = $(el).attr('href');
+                    const linkText = $(el).text().trim();
 
-                    // Accept any dl-protect link in the 1fichier section
-                    if (href && href.includes('dl-protect.link')) {
+                    if (href && href.includes('dl-protect.link') && linkText === 'Télécharger') {
                         console.log(`[ZT] Found 1fichier download link: ${href}`);
                         links.push(href);
                     }
@@ -185,8 +177,8 @@ class ZTClientEnhanced {
                 return links;
             }
 
-            // Strategy 2: Fallback - get all dl-protect links
-            console.log('[ZT] No 1fichier section found or no links in section, using fallback');
+            // Fallback
+            console.log('[ZT] No 1fichier section found, using fallback');
             $('a[href*="dl-protect.link"]').each((_, element) => {
                 const href = $(element).attr('href');
                 if (href) {
@@ -199,68 +191,6 @@ class ZTClientEnhanced {
             return uniqueLinks;
         } catch (error: any) {
             console.error('[ZT] Failed to fetch download links:', error.message);
-            return [];
-        }
-    }
-
-    async getEpisodeLinks(detailPageUrl: string): Promise<{ episode: string; link: string }[]> {
-        try {
-            console.log(`[ZT] Fetching episode links from: ${detailPageUrl}`);
-
-            const response = await axios.get(detailPageUrl);
-            const $ = cheerio.load(response.data);
-
-            const episodes: { episode: string; link: string }[] = [];
-            const episodePattern = /Episode\s+(\d+)/i;
-            const seenEpisodes = new Set<string>();
-
-            let in1fichierSection = false;
-            let shouldStop = false;
-
-            $('*').each((_: number, el: any) => {
-                if (shouldStop) return false; // Stop if we've finished processing
-
-                const $el = $(el);
-                const text = $el.text().trim();
-
-                // Check if this is the 1fichier heading
-                if (text === '1fichier' && !in1fichierSection) {
-                    console.log('[ZT] Found 1fichier section');
-                    in1fichierSection = true;
-                    return;
-                }
-
-                // If we hit another hosting service after being in 1fichier, stop completely
-                if (in1fichierSection && (text === 'Rapidgator' || text === 'Turbobit' ||
-                    text === 'Nitroflare' || text === 'Uploady' || text === 'DailyUploads')) {
-                    console.log(`[ZT] Reached ${text} section, stopping collection`);
-                    shouldStop = true;
-                    return false;
-                }
-
-                // Only collect links if we're in the 1fichier section
-                if (in1fichierSection && $el.is('a')) {
-                    const href = $el.attr('href');
-                    const linkText = $el.text().trim();
-
-                    if (href && href.includes('dl-protect.link') && episodePattern.test(linkText)) {
-                        // Deduplicate by episode name
-                        if (!seenEpisodes.has(linkText)) {
-                            console.log(`[ZT] Found episode: "${linkText}" -> ${href}`);
-                            episodes.push({
-                                episode: linkText,
-                                link: href
-                            });
-                            seenEpisodes.add(linkText);
-                        }
-                    }
-                }
-            });
-
-            console.log(`[ZT] Total unique episodes found: ${episodes.length}`);
-            return episodes;
-        } catch (error: any) {
-            console.error('[ZT] Failed to fetch episode links:', error.message);
             return [];
         }
     }

@@ -45,6 +45,19 @@ export function HeaderClient({ username }: HeaderClientProps) {
                         >
                             {t('nav.search')}
                         </Link>
+                        <Link
+                            href="/series"
+                            className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                        >
+                            {t('nav.series')}
+                        </Link>
+                        {/* Books link hidden for now */}
+                        {/* <Link
+                            href="/books"
+                            className="px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-white/50 dark:hover:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+                        >
+                            {t('nav.books')}
+                        </Link> */}
                     </nav>
 
                     <div className="hidden md:block h-8 w-px bg-zinc-200 dark:bg-zinc-700" />

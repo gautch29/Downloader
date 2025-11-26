@@ -1,0 +1,29 @@
+{
+    "storage": [
+        {
+            "name": "ExampleZFS",
+            "path": "/mnt/example"
+        }
+    ],
+    "services": {
+        "zoneTelechargement": {
+            "baseUrl": "https://zone-telechargement.irish"
+        },
+        "plex": {
+            "url": "http://localhost:32400",
+            "token": "YOUR_PLEX_TOKEN"
+        }
+    },
+    "downloadPaths": [
+        {
+            "id": "downloads",
+            "name": "Downloads",
+            "path": "/downloads"
+        },
+        {
+            "id": "movies",
+            "name": "Movies",
+            "path": "/mnt/media/Movies"
+        }
+    ]
+}

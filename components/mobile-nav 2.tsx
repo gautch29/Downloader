@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Search, Settings, Tv } from 'lucide-react';
+import { Home, Search, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 
@@ -39,19 +39,6 @@ export function MobileNav() {
                 >
                     <Search className={cn("h-6 w-6", isActive('/search') && "stroke-[3px]")} />
                     <span className="text-[10px] font-medium">{t('nav.search')}</span>
-                </Link>
-
-                <Link
-                    href="/series"
-                    className={cn(
-                        "flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors",
-                        isActive('/series')
-                            ? "text-[#0071E3] dark:text-[#0A84FF]"
-                            : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
-                    )}
-                >
-                    <Tv className={cn("h-6 w-6", isActive('/series') && "stroke-[3px]")} />
-                    <span className="text-[10px] font-medium">{t('nav.series')}</span>
                 </Link>
 
                 <Link
