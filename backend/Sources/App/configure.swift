@@ -34,6 +34,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(CreateSessions())
     app.migrations.add(CreateSettings())
     app.migrations.add(CreatePaths())
+    app.migrations.add(AddApiKeyToSettings())
     
     // Initialize DownloadManager
     let downloadManager = DownloadManager(app: app)
@@ -47,6 +48,7 @@ public func configure(_ app: Application) async throws {
     
     // Register commands
     app.commands.use(CreateUserCommand(), as: "create-user")
+    app.commands.use(SetApiKeyCommand(), as: "set-api-key")
 }
 
 struct DownloadManagerKey: StorageKey {

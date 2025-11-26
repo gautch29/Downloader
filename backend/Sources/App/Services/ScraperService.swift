@@ -1,5 +1,6 @@
 import Vapor
 import SwiftSoup
+import Fluent
 
 struct MovieResult: Content {
     var id: String
@@ -76,15 +77,25 @@ actor ScraperService {
         return SearchResult(movies: movies, total: movies.count)
     }
 
-    func getDownloadLink(url: String) async throws -> String {
-        guard let apiKey = apiKey else {
-            throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set")
+    func getDownloadLink(url: String, on db: Database) async throws -> String {
+        // Try env first
+        var key = apiKey
+        
+        // If not in env, try DB
+        if key == nil {
+            if let settings = try? await Setting.query(on: db).first() {
+                key = settings.onefichierApiKey
+            }
+        }
+        
+        guard let finalKey = key, !finalKey.isEmpty else {
+            throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set in env or DB")
         }
 
         let cleanUrl = url.components(separatedBy: "&")[0]
         
         let response = try await client.post("https://api.1fichier.com/v1/download/get_token.cgi") { req in
-            req.headers.add(name: .authorization, value: "Bearer \(apiKey)")
+            req.headers.add(name: .authorization, value: "Bearer \(finalKey)")
             try req.content.encode(["url": cleanUrl])
         }
         

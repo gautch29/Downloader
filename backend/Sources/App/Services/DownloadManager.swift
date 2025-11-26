@@ -58,7 +58,7 @@ actor DownloadManager {
             if download.url.contains("1fichier.com") {
                 app.logger.info("Resolving 1fichier link...")
                 let scraper = ScraperService(client: app.client)
-                directLink = try await scraper.getDownloadLink(url: download.url)
+                directLink = try await scraper.getDownloadLink(url: download.url, on: app.db)
                 app.logger.info("Resolved 1fichier link: \(directLink)")
             }
 
