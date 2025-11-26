@@ -1,6 +1,9 @@
 import Vapor
 import Fluent
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 actor DownloadManager {
     let app: Application
