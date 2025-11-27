@@ -1,6 +1,7 @@
 import Vapor
 import SwiftSoup
 import Fluent
+import Foundation
 
 struct MovieResult: Content {
     var id: String
@@ -92,38 +93,54 @@ actor ScraperService {
             throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set in env or DB")
         }
         let finalKey = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
-
         let cleanUrl = url.components(separatedBy: "&")[0]
         
-        // Debug logs
-        print("[DEBUG] Using API Key: \(finalKey.prefix(4))...\(finalKey.suffix(4))")
-        print("[DEBUG] Request URL: \(cleanUrl)")
-        
-        let response = try await client.post("https://api.1fichier.com/v1/download/get_token.cgi") { req in
-            req.headers.replaceOrAdd(name: .authorization, value: "Bearer \(finalKey)")
-            req.headers.replaceOrAdd(name: .userAgent, value: "curl/8.7.1")
-            req.headers.replaceOrAdd(name: .contentType, value: "application/json")
-            req.headers.replaceOrAdd(name: .accept, value: "*/*")
+        // Use curl via Process since Swift's HTTP client is being blocked (Error #188)
+        // This suggests 1fichier is fingerprinting the TLS client or IP version usage.
+        return try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+            process.arguments = [
+                "-s",
+                "-X", "POST",
+                "https://api.1fichier.com/v1/download/get_token.cgi",
+                "-H", "Content-Type: application/json",
+                "-H", "Authorization: Bearer \(finalKey)",
+                "-d", "{\"url\": \"\(cleanUrl)\"}"
+            ]
             
-            // Manually construct JSON to ensure exact format matching curl
-            let jsonString = "{\"url\": \"\(cleanUrl)\"}"
-            req.body = ByteBuffer(string: jsonString)
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            let errorPipe = Pipe()
+            process.standardError = errorPipe
             
-            print("[DEBUG] Request Body: \(jsonString)")
+            do {
+                try process.run()
+                process.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                
+                if process.terminationStatus == 0 {
+                    do {
+                        let result = try JSONDecoder().decode(OneFichierResponse.self, from: data)
+                        if let link = result.url ?? result.link {
+                            continuation.resume(returning: link)
+                        } else {
+                            continuation.resume(throwing: Abort(.badRequest, reason: "No download link: \(result.message ?? "Unknown")"))
+                        }
+                    } catch {
+                         print("[DEBUG] Curl Output: \(String(data: data, encoding: .utf8) ?? "nil")")
+                         continuation.resume(throwing: error)
+                    }
+                } else {
+                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                    let errorMsg = String(data: errorData, encoding: .utf8) ?? "Unknown curl error"
+                    continuation.resume(throwing: Abort(.internalServerError, reason: "Curl failed: \(errorMsg)"))
+                }
+            } catch {
+                continuation.resume(throwing: error)
+            }
         }
-        
-        print("[DEBUG] Response Status: \(response.status)")
-        if let body = response.body {
-            print("[DEBUG] Response Body: \(String(buffer: body))")
-        }
-        
-        let result = try response.content.decode(OneFichierResponse.self)
-        
-        if let link = result.url ?? result.link {
-            return link
-        }
-        
-        throw Abort(.badRequest, reason: "No download link found: \(result.message ?? "Unknown error")")
     }
 
     func scrapeDetail(url: String) async throws -> [String] {
