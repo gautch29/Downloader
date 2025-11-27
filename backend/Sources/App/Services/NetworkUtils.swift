@@ -1,10 +1,16 @@
 import Foundation
-import Network
+
+#if canImport(Glibc)
+import Glibc
+#else
+import Darwin
+#endif
 
 struct NetworkUtils {
     static func resolveIPv4(host: String) -> String? {
         var hints = addrinfo()
-        hints.ai_family = AF_INET // Force IPv4
+        memset(&hints, 0, MemoryLayout<addrinfo>.size)
+        hints.ai_family = AF_INET
         hints.ai_socktype = SOCK_STREAM
         
         var res: UnsafeMutablePointer<addrinfo>?
@@ -19,6 +25,7 @@ struct NetworkUtils {
         }
         
         var addr = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+        
         let conversionStatus = getnameinfo(
             result.pointee.ai_addr,
             result.pointee.ai_addrlen,
