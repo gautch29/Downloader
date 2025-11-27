@@ -38,44 +38,66 @@ actor ScraperService {
     func searchMovies(query: String) async throws -> SearchResult {
         let searchURL = "\(ztBaseURL)/?search=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
-        let response = try await client.get(URI(string: searchURL))
-        guard let body = response.body else {
-            throw Abort(.badGateway, reason: "Empty response from ZT")
-        }
-        
-        let html = String(buffer: body)
-        let doc = try SwiftSoup.parse(html)
-        
-        // Note: This is a simplified scraper based on typical ZT structure. 
-        // Real implementation would need precise selectors matching the current ZT theme.
-        // Assuming standard DLE (DataLife Engine) structure often used by ZT clones.
-        
-        let elements = try doc.select(".cover_global")
-        var movies: [MovieResult] = []
-        
-        for element in elements {
-            let titleEl = try element.select(".cover_infos_title a")
-            let title = try titleEl.text()
-            let url = try titleEl.attr("href")
-            let img = try element.select("img").attr("src")
+        // Use curl via Process to bypass Cloudflare/Protection
+        return try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+            process.arguments = [
+                "-s",
+                "-L",
+                "-A", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                searchURL
+            ]
             
-            // Extract metadata from title or other elements
-            let quality = try element.select(".detail_release").text()
-            let language = try element.select(".detail_langue").text()
+            let pipe = Pipe()
+            process.standardOutput = pipe
             
-            let movie = MovieResult(
-                id: url, // Use URL as ID for now
-                title: title,
-                year: nil, // Extract from title if needed
-                quality: quality.isEmpty ? "Unknown" : quality,
-                language: language.isEmpty ? "Unknown" : language,
-                poster: img.starts(with: "/") ? "\(ztBaseURL)\(img)" : img,
-                links: [url] // Detail page URL
-            )
-            movies.append(movie)
+            do {
+                try process.run()
+                process.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let html = String(data: data, encoding: .utf8) ?? ""
+                
+                if html.isEmpty {
+                     continuation.resume(throwing: Abort(.badGateway, reason: "Empty response from ZT"))
+                     return
+                }
+                
+                do {
+                    let doc = try SwiftSoup.parse(html)
+                    let elements = try doc.select(".cover_global")
+                    var movies: [MovieResult] = []
+                    
+                    for element in elements {
+                        let titleEl = try element.select(".cover_infos_title a")
+                        let title = try titleEl.text()
+                        let url = try titleEl.attr("href")
+                        let img = try element.select("img").attr("src")
+                        
+                        let quality = try element.select(".detail_release").text()
+                        let language = try element.select(".detail_langue").text()
+                        
+                        let movie = MovieResult(
+                            id: url,
+                            title: title,
+                            year: nil,
+                            quality: quality.isEmpty ? "Unknown" : quality,
+                            language: language.isEmpty ? "Unknown" : language,
+                            poster: img.starts(with: "/") ? "\(self.ztBaseURL)\(img)" : img,
+                            links: [url]
+                        )
+                        movies.append(movie)
+                    }
+                    
+                    continuation.resume(returning: SearchResult(movies: movies, total: movies.count))
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            } catch {
+                continuation.resume(throwing: error)
+            }
         }
-        
-        return SearchResult(movies: movies, total: movies.count)
     }
 
     func getDownloadLink(url: String, on db: Database) async throws -> String {

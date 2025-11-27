@@ -173,6 +173,13 @@ class FileDownloadDelegate: HTTPClientResponseDelegate {
         
         self.filename = name
         
+        // Update filename in DB immediately so UI shows it
+        let downloadId = download.id
+        _ = Download.query(on: db)
+            .filter(\.$id == downloadId!)
+            .set(\.$filename, to: name)
+            .update()
+        
         let filePath = URL(fileURLWithPath: path).appendingPathComponent(name).path
         _ = FileManager.default.createFile(atPath: filePath, contents: nil, attributes: nil)
         self.fileHandle = FileHandle(forWritingAtPath: filePath)

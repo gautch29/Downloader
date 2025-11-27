@@ -10,7 +10,7 @@ export function AutoRefresh() {
         // Refresh every 3 seconds to get latest download status
         const interval = setInterval(() => {
             router.refresh();
-        }, 3000);
+        }, 1000);
 
         return () => clearInterval(interval);
     }, [router]);
