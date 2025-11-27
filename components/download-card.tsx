@@ -44,6 +44,17 @@ export function DownloadCard({ download }: DownloadCardProps) {
 
     const [isExpanded, setIsExpanded] = React.useState(false);
 
+    // Helper to format bytes
+    const formatBytes = (bytes: number | null, decimals = 2) => {
+        if (!bytes) return '-';
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+    };
+
     // Extract color based on download status
     const getGlowColor = () => {
         if (isCompleted) return '#34C759'; // Green
@@ -55,8 +66,8 @@ export function DownloadCard({ download }: DownloadCardProps) {
     return (
         <MouseGlowCard
             glowColor={getGlowColor()}
-            glowSize={200}
-            glowIntensity={0.3}
+            glowSize={120}
+            glowIntensity={0.2}
             className="rounded-3xl"
         >
             <div className="group relative overflow-hidden rounded-3xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-zinc-800/60 transition-all hover:border-white/80 dark:hover:border-white/20 hover:bg-white/80 dark:hover:bg-zinc-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-none">
@@ -73,9 +84,6 @@ export function DownloadCard({ download }: DownloadCardProps) {
                         <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
                             <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-medium text-zinc-900 dark:text-white truncate text-[15px]">
-                                    {download.targetPath && (
-                                        <span className="text-zinc-500 dark:text-zinc-400 font-normal text-xs mr-1">{download.targetPath}/</span>
-                                    )}
                                     {download.customFilename || download.filename || t('download.detecting_filename')}
                                 </h3>
                                 <Badge
@@ -108,7 +116,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                         </span>
                                         <div className="flex flex-col items-end">
                                             <span className="text-[10px] text-zinc-500 dark:text-zinc-400 uppercase tracking-wider font-medium">
-                                                {download.speed ? `${(download.speed / 1024 / 1024).toFixed(1)} MB/s` : t('download.status.downloading')}
+                                                {download.speed ? `${formatBytes(download.speed)}/s` : t('download.status.downloading')}
                                             </span>
                                             {download.eta && download.eta > 0 && (
                                                 <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
@@ -121,7 +129,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                     </>
                                 ) : (
                                     <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-                                        {download.size ? `${(download.size / 1024 / 1024).toFixed(1)} MB` : '-'}
+                                        {formatBytes(download.size)}
                                     </span>
                                 )}
                             </div>
@@ -165,7 +173,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                 <span className="text-zinc-400 dark:text-zinc-500 font-medium">File Size</span>
                                 <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
                                     <HardDrive className="h-3.5 w-3.5 opacity-70" />
-                                    {download.size ? `${(download.size / 1024 / 1024).toFixed(2)} MB` : '-'}
+                                    {formatBytes(download.size)}
                                 </div>
                             </div>
                             <div className="col-span-2 space-y-1">
@@ -173,6 +181,14 @@ export function DownloadCard({ download }: DownloadCardProps) {
                                 <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-mono bg-zinc-50 dark:bg-black/20 p-2 rounded-lg break-all">
                                     <FileText className="h-3.5 w-3.5 opacity-70 shrink-0" />
                                     {download.targetPath ? `${download.targetPath}/${download.customFilename || download.filename || ''}` : (download.customFilename || download.filename || '-')}
+                                </div>
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                                <span className="text-zinc-400 dark:text-zinc-500 font-medium">Download Link</span>
+                                <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 font-mono bg-zinc-50 dark:bg-black/20 p-2 rounded-lg break-all">
+                                    <a href={download.url} target="_blank" rel="noopener noreferrer" className="hover:underline text-blue-500">
+                                        {download.url}
+                                    </a>
                                 </div>
                             </div>
                         </div>
