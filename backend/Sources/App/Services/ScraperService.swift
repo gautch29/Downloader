@@ -57,15 +57,23 @@ actor ScraperService {
             
             let pipe = Pipe()
             process.standardOutput = pipe
+            // Do not capture stderr to avoid deadlock if buffer fills up
             
             do {
+                print("[DEBUG] Starting curl process")
                 try process.run()
                 
+                print("[DEBUG] Reading output")
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                print("[DEBUG] Output read: \(data.count) bytes")
+                
                 process.waitUntilExit()
+                print("[DEBUG] Process exited with status: \(process.terminationStatus)")
+                
                 let html = String(data: data, encoding: .utf8) ?? ""
                 
                 if html.isEmpty {
+                     print("[DEBUG] Empty HTML response")
                      continuation.resume(throwing: Abort(.badGateway, reason: "Empty response from ZT"))
                      return
                 }
@@ -141,8 +149,7 @@ actor ScraperService {
             
             let pipe = Pipe()
             process.standardOutput = pipe
-            let errorPipe = Pipe()
-            process.standardError = errorPipe
+            // Do not capture stderr
             
             do {
                 try process.run()
@@ -163,9 +170,7 @@ actor ScraperService {
                          continuation.resume(throwing: error)
                     }
                 } else {
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMsg = String(data: errorData, encoding: .utf8) ?? "Unknown curl error"
-                    continuation.resume(throwing: Abort(.internalServerError, reason: "Curl failed: \(errorMsg)"))
+                    continuation.resume(throwing: Abort(.internalServerError, reason: "Curl failed with status \(process.terminationStatus)"))
                 }
             } catch {
                 continuation.resume(throwing: error)
