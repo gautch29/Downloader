@@ -56,7 +56,7 @@ export function DownloadCard({ download }: DownloadCardProps) {
     };
 
     return (
-        <div className="group relative overflow-hidden rounded-3xl border border-white/60 dark:border-white/10 bg-white/60 dark:bg-zinc-800/60 transition-all hover:border-white/80 dark:hover:border-white/20 hover:bg-white/80 dark:hover:bg-zinc-800/80 shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] dark:shadow-none">
+        <div className="group relative overflow-hidden rounded-3xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-900 transition-all hover:border-zinc-300 dark:hover:border-white/20 shadow-sm hover:shadow-md h-fit">
             {/* Progress Background for Downloading State */}
             {isDownloading && (
                 <div
