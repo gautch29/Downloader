@@ -88,17 +88,27 @@ actor ScraperService {
             }
         }
         
-        guard let finalKey = key, !finalKey.isEmpty else {
+        guard let rawKey = key, !rawKey.isEmpty else {
             throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set in env or DB")
         }
+        let finalKey = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let cleanUrl = url.components(separatedBy: "&")[0]
         
+        // Debug logs
+        print("[DEBUG] Using API Key: \(finalKey.prefix(4))...\(finalKey.suffix(4))")
+        print("[DEBUG] Request URL: \(cleanUrl)")
+        
         let response = try await client.post("https://api.1fichier.com/v1/download/get_token.cgi") { req in
             req.headers.add(name: .authorization, value: "Bearer \(finalKey)")
-            req.headers.add(name: .contentType, value: "application/json")
-            req.headers.add(name: .userAgent, value: "curl/8.7.1") // Mimic curl since it works
+            req.headers.add(name: .userAgent, value: "curl/8.7.1")
+            // Let Vapor handle Content-Type with encode
             try req.content.encode(["url": cleanUrl])
+        }
+        
+        print("[DEBUG] Response Status: \(response.status)")
+        if let body = response.body {
+            print("[DEBUG] Response Body: \(String(buffer: body))")
         }
         
         let result = try response.content.decode(OneFichierResponse.self)
