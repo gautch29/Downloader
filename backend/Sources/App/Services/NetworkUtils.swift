@@ -11,7 +11,11 @@ struct NetworkUtils {
         var hints = addrinfo()
         memset(&hints, 0, MemoryLayout<addrinfo>.size)
         hints.ai_family = AF_INET
+        #if canImport(Glibc)
+        hints.ai_socktype = Int32(SOCK_STREAM.rawValue)
+        #else
         hints.ai_socktype = SOCK_STREAM
+        #endif
         
         var res: UnsafeMutablePointer<addrinfo>?
         
@@ -58,7 +62,7 @@ struct NetworkUtils {
             return nil
         }
         
-        var newUrlString = urlString.replacingOccurrences(of: "://\(host)", with: "://\(ip)")
+        let newUrlString = urlString.replacingOccurrences(of: "://\(host)", with: "://\(ip)")
         return (newUrlString, host)
     }
 }
