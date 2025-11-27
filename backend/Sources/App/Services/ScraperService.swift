@@ -60,9 +60,9 @@ actor ScraperService {
             
             do {
                 try process.run()
-                process.waitUntilExit()
                 
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
                 let html = String(data: data, encoding: .utf8) ?? ""
                 
                 if html.isEmpty {
@@ -146,9 +146,9 @@ actor ScraperService {
             
             do {
                 try process.run()
-                process.waitUntilExit()
                 
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
                 
                 if process.terminationStatus == 0 {
                     do {
