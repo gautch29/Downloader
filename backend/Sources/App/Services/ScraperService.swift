@@ -96,6 +96,8 @@ actor ScraperService {
         
         let response = try await client.post("https://api.1fichier.com/v1/download/get_token.cgi") { req in
             req.headers.add(name: .authorization, value: "Bearer \(finalKey)")
+            req.headers.add(name: .contentType, value: "application/json")
+            req.headers.add(name: .userAgent, value: "curl/8.7.1") // Mimic curl since it works
             try req.content.encode(["url": cleanUrl])
         }
         
