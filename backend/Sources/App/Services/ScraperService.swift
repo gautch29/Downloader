@@ -101,6 +101,7 @@ actor ScraperService {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
             process.arguments = [
+                "-4", // Force IPv4
                 "-s",
                 "-X", "POST",
                 "https://api.1fichier.com/v1/download/get_token.cgi",
@@ -108,6 +109,8 @@ actor ScraperService {
                 "-H", "Authorization: Bearer \(finalKey)",
                 "-d", "{\"url\": \"\(cleanUrl)\"}"
             ]
+            
+            print("[DEBUG] Executing: /usr/bin/curl \(process.arguments?.joined(separator: " ") ?? "")")
             
             let pipe = Pipe()
             process.standardOutput = pipe
