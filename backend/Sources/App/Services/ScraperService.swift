@@ -2,6 +2,8 @@ import Vapor
 import SwiftSoup
 import Fluent
 import Foundation
+import AsyncHTTPClient
+import NIOSSL
 
 struct MovieResult: Content {
     var id: String
@@ -34,20 +36,34 @@ actor ScraperService {
         self.client = client
         self.apiKey = Environment.get("ONEFICHIER_API_KEY")
     }
+    
+    // Helper to create insecure client
+    private func makeInsecureClient() -> HTTPClient {
+        var tlsConfig = TLSConfiguration.makeClientConfiguration()
+        tlsConfig.certificateVerification = .none
+        return HTTPClient(
+            eventLoopGroupProvider: .singleton,
+            configuration: HTTPClient.Configuration(tlsConfiguration: tlsConfig)
+        )
+    }
 
     func searchMovies(query: String) async throws -> SearchResult {
         let searchURL = "\(ztBaseURL)/?search=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
         // Resolve IPv4 to bypass Cloudflare/Protection
-        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: searchURL) else {
+        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: searchURL),
+              let url = URL(string: ipv4UrlString) else {
             throw Abort(.badRequest, reason: "Invalid URL or DNS resolution failed")
         }
         
-        var headers = HTTPHeaders()
-        headers.add(name: "Host", value: originalHost)
-        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        let httpClient = makeInsecureClient()
+        defer { try? httpClient.syncShutdown() }
         
-        let response = try await client.send(.GET, headers: headers, to: URI(string: ipv4UrlString))
+        var request = try HTTPClient.Request(url: url)
+        request.headers.add(name: "Host", value: originalHost)
+        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await httpClient.execute(request: request).get()
         
         guard let body = response.body else {
             throw Abort(.badGateway, reason: "Empty response from ZT")
@@ -103,21 +119,25 @@ actor ScraperService {
         let apiUrl = "https://api.1fichier.com/v1/download/get_token.cgi"
         
         // Resolve IPv4
-        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: apiUrl) else {
+        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: apiUrl),
+              let targetUrl = URL(string: ipv4UrlString) else {
              throw Abort(.badRequest, reason: "DNS resolution failed for 1fichier API")
         }
         
-        var headers = HTTPHeaders()
-        headers.add(name: "Host", value: originalHost)
-        headers.add(name: "Content-Type", value: "application/json")
-        headers.add(name: "Authorization", value: "Bearer \(finalKey)")
-        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        let httpClient = makeInsecureClient()
+        defer { try? httpClient.syncShutdown() }
+        
+        var request = try HTTPClient.Request(url: targetUrl, method: .POST)
+        request.headers.add(name: "Host", value: originalHost)
+        request.headers.add(name: "Content-Type", value: "application/json")
+        request.headers.add(name: "Authorization", value: "Bearer \(finalKey)")
+        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
         let body = ["url": cleanUrl]
+        let jsonData = try JSONEncoder().encode(body)
+        request.body = .byteBuffer(ByteBuffer(data: jsonData))
         
-        let response = try await client.send(.POST, headers: headers, to: URI(string: ipv4UrlString)) { req in
-            try req.content.encode(body)
-        }
+        let response = try await httpClient.execute(request: request).get()
         
         guard let responseBody = response.body else {
             throw Abort(.badGateway, reason: "Empty response from 1fichier")

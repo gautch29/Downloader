@@ -4,6 +4,7 @@ import Foundation
 import AsyncHTTPClient
 import NIO
 import NIOHTTP1
+import NIOSSL
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
@@ -19,7 +20,6 @@ actor DownloadManager {
         // Ensure download directory exists
         try? FileManager.default.createDirectory(atPath: downloadDir, withIntermediateDirectories: true)
         
-
     }
 
     func startWorker() async {
@@ -101,8 +101,15 @@ actor DownloadManager {
         
         app.logger.info("Downloading from \(originalHost) via \(url.host ?? "unknown") (IPv4)")
 
+        // Configure TLS to disable hostname verification (needed because we use IP in URL)
+        var tlsConfig = TLSConfiguration.makeClientConfiguration()
+        tlsConfig.certificateVerification = .none
+        
         // Use AsyncHTTPClient for streaming
-        let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
+        let httpClient = HTTPClient(
+            eventLoopGroupProvider: .singleton,
+            configuration: HTTPClient.Configuration(tlsConfiguration: tlsConfig)
+        )
         
         do {
             var request = try HTTPClient.Request(url: url)
