@@ -100,10 +100,16 @@ actor ScraperService {
         print("[DEBUG] Request URL: \(cleanUrl)")
         
         let response = try await client.post("https://api.1fichier.com/v1/download/get_token.cgi") { req in
-            req.headers.add(name: .authorization, value: "Bearer \(finalKey)")
-            req.headers.add(name: .userAgent, value: "curl/8.7.1")
-            // Let Vapor handle Content-Type with encode
-            try req.content.encode(["url": cleanUrl])
+            req.headers.replaceOrAdd(name: .authorization, value: "Bearer \(finalKey)")
+            req.headers.replaceOrAdd(name: .userAgent, value: "curl/8.7.1")
+            req.headers.replaceOrAdd(name: .contentType, value: "application/json")
+            req.headers.replaceOrAdd(name: .accept, value: "*/*")
+            
+            // Manually construct JSON to ensure exact format matching curl
+            let jsonString = "{\"url\": \"\(cleanUrl)\"}"
+            req.body = ByteBuffer(string: jsonString)
+            
+            print("[DEBUG] Request Body: \(jsonString)")
         }
         
         print("[DEBUG] Response Status: \(response.status)")
