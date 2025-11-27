@@ -38,66 +38,49 @@ actor ScraperService {
     func searchMovies(query: String) async throws -> SearchResult {
         let searchURL = "\(ztBaseURL)/?search=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
         
-        // Use curl via Process to bypass Cloudflare/Protection
-        return try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-            process.arguments = [
-                "-s",
-                "-L",
-                "-A", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                searchURL
-            ]
-            
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            
-            do {
-                try process.run()
-                process.waitUntilExit()
-                
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                let html = String(data: data, encoding: .utf8) ?? ""
-                
-                if html.isEmpty {
-                     continuation.resume(throwing: Abort(.badGateway, reason: "Empty response from ZT"))
-                     return
-                }
-                
-                do {
-                    let doc = try SwiftSoup.parse(html)
-                    let elements = try doc.select(".cover_global")
-                    var movies: [MovieResult] = []
-                    
-                    for element in elements {
-                        let titleEl = try element.select(".cover_infos_title a")
-                        let title = try titleEl.text()
-                        let url = try titleEl.attr("href")
-                        let img = try element.select("img").attr("src")
-                        
-                        let quality = try element.select(".detail_release").text()
-                        let language = try element.select(".detail_langue").text()
-                        
-                        let movie = MovieResult(
-                            id: url,
-                            title: title,
-                            year: nil,
-                            quality: quality.isEmpty ? "Unknown" : quality,
-                            language: language.isEmpty ? "Unknown" : language,
-                            poster: img.starts(with: "/") ? "\(self.ztBaseURL)\(img)" : img,
-                            links: [url]
-                        )
-                        movies.append(movie)
-                    }
-                    
-                    continuation.resume(returning: SearchResult(movies: movies, total: movies.count))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            } catch {
-                continuation.resume(throwing: error)
-            }
+        // Resolve IPv4 to bypass Cloudflare/Protection
+        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: searchURL) else {
+            throw Abort(.badRequest, reason: "Invalid URL or DNS resolution failed")
         }
+        
+        var headers = HTTPHeaders()
+        headers.add(name: "Host", value: originalHost)
+        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await client.send(.GET, headers: headers, to: URI(string: ipv4UrlString))
+        
+        guard let body = response.body else {
+            throw Abort(.badGateway, reason: "Empty response from ZT")
+        }
+        
+        let html = String(buffer: body)
+        let doc = try SwiftSoup.parse(html)
+        
+        let elements = try doc.select(".cover_global")
+        var movies: [MovieResult] = []
+        
+        for element in elements {
+            let titleEl = try element.select(".cover_infos_title a")
+            let title = try titleEl.text()
+            let url = try titleEl.attr("href")
+            let img = try element.select("img").attr("src")
+            
+            let quality = try element.select(".detail_release").text()
+            let language = try element.select(".detail_langue").text()
+            
+            let movie = MovieResult(
+                id: url,
+                title: title,
+                year: nil,
+                quality: quality.isEmpty ? "Unknown" : quality,
+                language: language.isEmpty ? "Unknown" : language,
+                poster: img.starts(with: "/") ? "\(self.ztBaseURL)\(img)" : img,
+                links: [url]
+            )
+            movies.append(movie)
+        }
+        
+        return SearchResult(movies: movies, total: movies.count)
     }
 
     func getDownloadLink(url: String, on db: Database) async throws -> String {
@@ -117,54 +100,41 @@ actor ScraperService {
         let finalKey = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
         let cleanUrl = url.components(separatedBy: "&")[0]
         
-        // Use curl via Process since Swift's HTTP client is being blocked (Error #188)
-        // This suggests 1fichier is fingerprinting the TLS client or IP version usage.
-        return try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-            process.arguments = [
-                "-4", // Force IPv4
-                "-s",
-                "-X", "POST",
-                "https://api.1fichier.com/v1/download/get_token.cgi",
-                "-H", "Content-Type: application/json",
-                "-H", "Authorization: Bearer \(finalKey)",
-                "-d", "{\"url\": \"\(cleanUrl)\"}"
-            ]
-            
-            print("[DEBUG] Executing: /usr/bin/curl \(process.arguments?.joined(separator: " ") ?? "")")
-            
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            let errorPipe = Pipe()
-            process.standardError = errorPipe
-            
-            do {
-                try process.run()
-                process.waitUntilExit()
-                
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                
-                if process.terminationStatus == 0 {
-                    do {
-                        let result = try JSONDecoder().decode(OneFichierResponse.self, from: data)
-                        if let link = result.url ?? result.link {
-                            continuation.resume(returning: link)
-                        } else {
-                            continuation.resume(throwing: Abort(.badRequest, reason: "No download link: \(result.message ?? "Unknown")"))
-                        }
-                    } catch {
-                         print("[DEBUG] Curl Output: \(String(data: data, encoding: .utf8) ?? "nil")")
-                         continuation.resume(throwing: error)
-                    }
-                } else {
-                    let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-                    let errorMsg = String(data: errorData, encoding: .utf8) ?? "Unknown curl error"
-                    continuation.resume(throwing: Abort(.internalServerError, reason: "Curl failed: \(errorMsg)"))
-                }
-            } catch {
-                continuation.resume(throwing: error)
+        let apiUrl = "https://api.1fichier.com/v1/download/get_token.cgi"
+        
+        // Resolve IPv4
+        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: apiUrl) else {
+             throw Abort(.badRequest, reason: "DNS resolution failed for 1fichier API")
+        }
+        
+        var headers = HTTPHeaders()
+        headers.add(name: "Host", value: originalHost)
+        headers.add(name: "Content-Type", value: "application/json")
+        headers.add(name: "Authorization", value: "Bearer \(finalKey)")
+        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let body = ["url": cleanUrl]
+        
+        let response = try await client.send(.POST, headers: headers, to: URI(string: ipv4UrlString)) { req in
+            try req.content.encode(body)
+        }
+        
+        guard let responseBody = response.body else {
+            throw Abort(.badGateway, reason: "Empty response from 1fichier")
+        }
+        
+        let data = Data(buffer: responseBody)
+        
+        if response.status == .ok {
+            let result = try JSONDecoder().decode(OneFichierResponse.self, from: data)
+            if let link = result.url ?? result.link {
+                return link
+            } else {
+                throw Abort(.badRequest, reason: "No download link: \(result.message ?? "Unknown")")
             }
+        } else {
+             let errorMsg = String(data: data, encoding: .utf8) ?? "Unknown error"
+             throw Abort(.badRequest, reason: "1fichier API error: \(errorMsg)")
         }
     }
 

@@ -87,18 +87,30 @@ actor DownloadManager {
     }
 
     func downloadFile(download: Download, from urlString: String) async throws {
-        guard let url = URL(string: urlString) else {
-            throw Abort(.badRequest, reason: "Invalid URL")
+        // Determine destination path
+        let destinationPath = download.targetPath ?? downloadDir
+        
+        // Ensure directory exists
+        try? FileManager.default.createDirectory(atPath: destinationPath, withIntermediateDirectories: true)
+
+        // Resolve IPv4 to bypass 1fichier IPv6 blocking
+        guard let (ipv4UrlString, originalHost) = NetworkUtils.getIPv4URL(from: urlString),
+              let url = URL(string: ipv4UrlString) else {
+            throw Abort(.badRequest, reason: "Invalid URL or DNS resolution failed")
         }
+        
+        app.logger.info("Downloading from \(originalHost) via \(url.host ?? "unknown") (IPv4)")
 
         // Use AsyncHTTPClient for streaming
         let httpClient = HTTPClient(eventLoopGroupProvider: .singleton)
         
         do {
-            let request = try HTTPClient.Request(url: url)
+            var request = try HTTPClient.Request(url: url)
+            request.headers.add(name: "Host", value: originalHost)
+            request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
             
             let delegate = FileDownloadDelegate(
-                path: downloadDir,
+                path: destinationPath,
                 download: download,
                 db: app.db,
                 logger: app.logger
