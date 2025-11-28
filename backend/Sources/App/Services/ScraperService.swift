@@ -38,84 +38,6 @@ actor ScraperService {
         self.apiKey = Environment.get("ONEFICHIER_API_KEY")
     }
     
-    func searchMovies(query: String) async throws -> SearchResult {
-        let searchURL = "\(ztBaseURL)/?search=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")"
-        
-        // Use curl via Process to bypass Cloudflare/Protection and force IPv4
-        return try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
-            process.arguments = [
-                "-4", // Force IPv4
-                "-s",
-                "-L",
-                "-A", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                searchURL
-            ]
-            
-            print("[DEBUG] Searching movies via curl: \(searchURL)")
-            
-            let pipe = Pipe()
-            process.standardOutput = pipe
-            // Do not capture stderr to avoid deadlock if buffer fills up
-            
-            do {
-                print("[DEBUG] Starting curl process")
-                try process.run()
-                
-                print("[DEBUG] Reading output")
-                let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                print("[DEBUG] Output read: \(data.count) bytes")
-                
-                process.waitUntilExit()
-                print("[DEBUG] Process exited with status: \(process.terminationStatus)")
-                
-                let html = String(data: data, encoding: .utf8) ?? ""
-                
-                if html.isEmpty {
-                     print("[DEBUG] Empty HTML response")
-                     continuation.resume(throwing: Abort(.badGateway, reason: "Empty response from ZT"))
-                     return
-                }
-                
-                do {
-                    let doc = try SwiftSoup.parse(html)
-                    let elements = try doc.select(".cover_global")
-                    print("[DEBUG] Found \(elements.count) movie elements")
-                    
-                    var movies: [MovieResult] = []
-                    
-                    for element in elements {
-                        let titleEl = try element.select(".cover_infos_title a")
-                        let title = try titleEl.text()
-                        let url = try titleEl.attr("href")
-                        let img = try element.select("img").attr("src")
-                        
-                        let quality = try element.select(".detail_release").text()
-                        let language = try element.select(".detail_langue").text()
-                        
-                        let movie = MovieResult(
-                            id: url,
-                            title: title,
-                            year: nil,
-                            quality: quality.isEmpty ? "Unknown" : quality,
-                            language: language.isEmpty ? "Unknown" : language,
-                            poster: img.starts(with: "/") ? "\(self.ztBaseURL)\(img)" : img,
-                            links: [url]
-                        )
-                        movies.append(movie)
-                    }
-                    
-                    continuation.resume(returning: SearchResult(movies: movies, total: movies.count))
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-
     func getDownloadLink(url: String, on db: Database) async throws -> String {
         // Try env first
         var key = apiKey
@@ -178,60 +100,60 @@ actor ScraperService {
         }
     }
 
-    func scrapeDetail(url: String) async throws -> [String] {
-        // Ensure URL is absolute
-        let targetURL = url.starts(with: "http") ? url : "\(ztBaseURL)\(url)"
-        
-        let response = try await client.get(URI(string: targetURL))
-        guard let body = response.body else {
-            throw Abort(.badGateway, reason: "Empty response from ZT Detail")
-        }
-        
-        let html = String(buffer: body)
-        let doc = try SwiftSoup.parse(html)
-        
-        // Select all links
-        let elements = try doc.select("a")
-        var links: [String] = []
-        
-        for element in elements {
-            let href = try element.attr("href")
-            // Filter for 1fichier or dl-protect links
-            if href.contains("1fichier.com") || href.contains("dl-protect") {
-                links.append(href)
-            }
-        }
-        
-        return links
+    func searchMovies(query: String) async throws -> SearchResult {
+        return try await runNodeScript(command: "search", arg: query)
     }
-
+    
+    func scrapeDetail(url: String) async throws -> [String] {
+        let response: LinksResponse = try await runNodeScript(command: "links", arg: url)
+        return response.links
+    }
+    
     func getEpisodeLinks(url: String) async throws -> [String] {
-        // Ensure URL is absolute
-        let targetURL = url.starts(with: "http") ? url : "\(ztBaseURL)\(url)"
-        
-        let response = try await client.get(URI(string: targetURL))
-        guard let body = response.body else {
-            throw Abort(.badGateway, reason: "Empty response from ZT Series")
-        }
-        
-        let html = String(buffer: body)
-        let doc = try SwiftSoup.parse(html)
-        
-        // Logic to extract episode links. 
-        // This depends on ZT structure for series.
-        // Assuming similar to movies but maybe multiple links per episode.
-        // For now, returning all 1fichier/dl-protect links found.
-        
-        let elements = try doc.select("a")
-        var links: [String] = []
-        
-        for element in elements {
-            let href = try element.attr("href")
-            if href.contains("1fichier.com") || href.contains("dl-protect") {
-                links.append(href)
+        // The wrapper handles both movies and series links logic
+        let response: LinksResponse = try await runNodeScript(command: "links", arg: url)
+        return response.links
+    }
+    
+    private func runNodeScript<T: Decodable>(command: String, arg: String) async throws -> T {
+        return try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/node")
+            
+            // Assuming the script is in the working directory or a known path
+            // In a real deployment, you'd want a robust way to find this path
+            let scriptPath = URL(fileURLWithPath: #file).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("NodeAPI/wrapper.js").path
+            
+            process.arguments = [scriptPath, command, arg]
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            
+            do {
+                try process.run()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
+                
+                if process.terminationStatus == 0 {
+                    do {
+                        let result = try JSONDecoder().decode(T.self, from: data)
+                        continuation.resume(returning: result)
+                    } catch {
+                        print("[DEBUG] Node Output: \(String(data: data, encoding: .utf8) ?? "nil")")
+                        continuation.resume(throwing: error)
+                    }
+                } else {
+                    continuation.resume(throwing: Abort(.internalServerError, reason: "Node script failed with status \(process.terminationStatus)"))
+                }
+            } catch {
+                continuation.resume(throwing: error)
             }
         }
-        
-        return links
+    }
+    
+    // Helper struct for decoding links response from Node
+    struct LinksResponse: Decodable {
+        var links: [String]
     }
 }
