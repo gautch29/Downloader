@@ -31,7 +31,7 @@ struct OneFichierResponse: Decodable {
 actor ScraperService {
     let client: Client
     let apiKey: String?
-    let ztBaseURL = "https://zone-telechargement.irish"
+    let ztBaseURL = "https://www.zone-telechargement.irish"
 
     init(client: Client) {
         self.client = client

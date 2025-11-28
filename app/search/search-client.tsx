@@ -45,7 +45,16 @@ export function SearchClient() {
                 throw new Error(data.error || 'Failed to search movies');
             }
 
-            setMovies(data.movies || []);
+            setMovies((data.movies || []).map((movie: any) => ({
+                ...movie,
+                qualities: [{
+                    quality: movie.quality || 'Unknown',
+                    language: movie.language || 'Unknown',
+                    url: movie.id,
+                    fileSize: undefined
+                }]
+            })));
+
             if (data.movies && data.movies.length === 0) {
                 setError(t('search.no_results'));
             }
