@@ -180,7 +180,11 @@ export function MovieCard({ movie }: MovieCardProps) {
                     {movie.qualities.length > 1 ? (
                         <Select
                             value={selectedQualityIndex.toString()}
-                            onValueChange={(value) => setSelectedQualityIndex(parseInt(value))}
+                            onValueChange={(value) => {
+                                setSelectedQualityIndex(parseInt(value));
+                                setDownloadLinks([]);
+                                setError(null);
+                            }}
                         >
                             <SelectTrigger className="w-full h-9 text-xs bg-white/80 dark:bg-zinc-800/80 border-zinc-200 dark:border-zinc-700">
                                 <SelectValue />
