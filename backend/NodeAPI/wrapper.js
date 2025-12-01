@@ -46,47 +46,51 @@ async function main() {
             const links = [];
 
 
-            // Check next sibling
-            let next = $(el).next();
-            if (next.is('br')) next = next.next();
+            // Based on user description: "1fichier" label -> "télécharger" button
+            // Strategy: Find '1fichier' text, then look for the next 'a' tag with 'télécharger' or just the next link
 
-            if (next.is('a')) {
-                const href = next.attr('href');
-                if (href) links.push(href);
-            } else {
-                // Maybe it's in the parent's next sibling?
+            $('b').each((i, el) => {
+                const text = $(el).text();
+                if (text.toLowerCase().includes('1fichier')) {
+                    // Check next sibling
+                    let next = $(el).next();
+                    if (next.is('br')) next = next.next();
 
-                // Try parent's next element
-                const parentNext = $(el).parent().next();
-                const link = parentNext.find('a');
-                if (link.length > 0) {
-                    const href = link.attr('href');
-                    if (href) links.push(href);
+                    if (next.is('a')) {
+                        const href = next.attr('href');
+                        if (href) links.push(href);
+                    } else {
+                        // Try parent's next element
+                        const parentNext = $(el).parent().next();
+                        const link = parentNext.find('a');
+                        if (link.length > 0) {
+                            const href = link.attr('href');
+                            if (href) links.push(href);
+                        }
+                    }
                 }
+            });
+
+            // Fallback: if specific logic fails, keep existing but filter better?
+            if (links.length === 0) {
+                $('a').each((i, el) => {
+                    const href = $(el).attr('href');
+                    const text = $(el).text().toLowerCase();
+                    if (href && (href.includes('1fichier.com') || href.includes('dl-protect'))) {
+                        // Only add if text implies download or it's a direct link
+                        if (text.includes('télécharger') || text.includes('telecharger') || text.includes('download')) {
+                            links.push(href);
+                        }
+                    }
+                });
             }
+
+            console.log(JSON.stringify({ links: [...new Set(links)] }));
         }
-    });
-
-    // Fallback: if specific logic fails, keep existing but filter better?
-    if (links.length === 0) {
-        $('a').each((i, el) => {
-            const href = $(el).attr('href');
-            const text = $(el).text().toLowerCase();
-            if (href && (href.includes('1fichier.com') || href.includes('dl-protect'))) {
-                // Only add if text implies download or it's a direct link
-                if (text.includes('télécharger') || text.includes('telecharger') || text.includes('download')) {
-                    links.push(href);
-                }
-            }
-        });
-    }
-
-    console.log(JSON.stringify({ links: [...new Set(links)] }));
-}
     } catch (error) {
-    console.error(error);
-    process.exit(1);
+        console.error(error);
+        process.exit(1);
+    }
 }
-}
-
 main();
+```
