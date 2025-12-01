@@ -21,8 +21,8 @@ async function main() {
             const filmsList = Array.isArray(films) ? films : [];
             const seriesList = Array.isArray(series) ? series : [];
 
-            if (!Array.isArray(films) && films?.error) console.error('Films search error:', films.error);
-            if (!Array.isArray(series) && series?.error) console.error('Series search error:', series.error);
+            if (!Array.isArray(films) && films && films.error) console.error('Films search error:', films.error);
+            if (!Array.isArray(series) && series && series.error) console.error('Series search error:', series.error);
 
             const results = [...filmsList, ...seriesList].map(item => ({
                 id: item.url.replace(BASE_URL, ''),
