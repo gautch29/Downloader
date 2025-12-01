@@ -29,7 +29,6 @@ async function main() {
                 title: item.title,
                 quality: item.quality || 'Unknown',
                 language: item.language || 'Unknown',
-                size: item.size || '', // Include size
                 poster: item.image,
                 links: [item.url]
             }));
@@ -52,11 +51,6 @@ async function main() {
             $('b').each((i, el) => {
                 const text = $(el).text();
                 if (text.toLowerCase().includes('1fichier')) {
-                    // Debug: Print structure
-                    console.error('Found 1fichier. Parent HTML:', $(el).parent().html());
-                    console.error('Next sibling HTML:', $(el).next().html());
-                    console.error('Parent Next sibling HTML:', $(el).parent().next().html());
-
                     // Check next sibling
                     let next = $(el).next();
                     if (next.is('br')) next = next.next();
