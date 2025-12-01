@@ -50,8 +50,11 @@ export function MovieCard({ movie }: MovieCardProps) {
         setError(null);
 
         try {
-            // Fetch the download links from the detail page
-            if (downloadLinks.length === 0) {
+            // Use a local variable to ensure we have the links immediately
+            let linksToUse = downloadLinks;
+
+            // Fetch the download links from the detail page if we don't have them yet
+            if (linksToUse.length === 0) {
                 setFetchingLinks(true);
 
                 // Use REST API instead of Server Action
@@ -73,21 +76,18 @@ export function MovieCard({ movie }: MovieCardProps) {
                 }
 
                 setDownloadLinks(result.links);
+                linksToUse = result.links;
             }
 
-            // Add the first link to the download queue
-            const linkToDownload = downloadLinks.length > 0 ? downloadLinks[0] : null;
-            if (!linkToDownload) {
+            // Open the first link in a new tab
+            const linkToOpen = linksToUse.length > 0 ? linksToUse[0] : null;
+            if (!linkToOpen) {
                 throw new Error('No download link available');
             }
 
-            const downloadResult = await add1fichierDownloadAction(linkToDownload);
-
-            if (!downloadResult.success) {
-                throw new Error(downloadResult.error || 'Failed to add download');
-            }
+            window.open(linkToOpen, '_blank');
         } catch (err: any) {
-            setError(err.message || 'Failed to download');
+            setError(err.message || 'Failed to open link');
         } finally {
             setDownloading(false);
         }
