@@ -16,7 +16,7 @@ class ZoneTelechargementParser {
     moviesDbToken = ""
   ) {
     this._ZTBaseURL = '';
-    this._allCategories = ["films", "series"];
+    this._allCategories = ["films", "series", "mangas"];
     // this._allCategories = [ "films", "series", "jeux", "musiques", "mangas", "ebooks", "autres-videos", "logiciels", "mobiles" ]
     this._lastAxiosRequestTimestamp = 0; // Do not edit this value. used as temp
     this._axiosRequestTimeInBetween = axiosRequestTimeInBetween; // Default: 300 - In milliseconds. Minimum time to wait between each requests to the base URL. Low values can cause functions to crash due to HTPP error 520 from axios. (Or rate limit errors)
@@ -151,6 +151,7 @@ class ZoneTelechargementParser {
   async _getMovieNameFromId(categories, id) {
     if (categories == "films") categories = "film";
     else if (categories == "series") categories = "serie";
+    else if (categories == "mangas") categories = "manga";
     try {
       console.log("categories:", categories, "id:", id)
       const url = this._ZTBaseURL + `/?p=${categories}&id=${id}`;
@@ -204,7 +205,7 @@ class ZoneTelechargementParser {
           size: size,
           links: downloadLinks,
         };
-      } else if (categories == "serie") {
+      } else if (categories == "serie" || categories == "manga") {
         const sizeMatch = htmlString.match(
           /<strong><u>Taille d'un episode<\/u> :<\/strong>\s*([^<]+)<br>/
         );
