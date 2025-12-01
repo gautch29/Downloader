@@ -122,6 +122,12 @@ actor ScraperService {
             // Use /usr/bin/env to find node in PATH (works on macOS and Debian)
             process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             
+            // Add Homebrew path to environment to ensure node is found
+            var env = ProcessInfo.processInfo.environment
+            let path = env["PATH"] ?? ""
+            env["PATH"] = path + ":/opt/homebrew/bin:/usr/local/bin"
+            process.environment = env
+            
             // Assuming the script is in the working directory or a known path
             // In a real deployment, you'd want a robust way to find this path
             let scriptPath = URL(fileURLWithPath: #file).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("NodeAPI/wrapper.js").path

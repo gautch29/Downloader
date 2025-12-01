@@ -18,7 +18,13 @@ async function main() {
             const series = await ztParser.search('series', query, 1);
 
             // Combine and format results
-            const results = [...(films || []), ...(series || [])].map(item => ({
+            const filmsList = Array.isArray(films) ? films : [];
+            const seriesList = Array.isArray(series) ? series : [];
+
+            if (!Array.isArray(films) && films?.error) console.error('Films search error:', films.error);
+            if (!Array.isArray(series) && series?.error) console.error('Series search error:', series.error);
+
+            const results = [...filmsList, ...seriesList].map(item => ({
                 id: item.url.replace(BASE_URL, ''),
                 title: item.title,
                 quality: item.quality || 'Unknown',
