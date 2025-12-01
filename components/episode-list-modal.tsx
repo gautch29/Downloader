@@ -34,7 +34,7 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
 
             console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
 
-            fetch('/api/series/episodes', {
+            fetch('/api/movies/episodes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: detailPageUrl })

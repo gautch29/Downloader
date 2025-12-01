@@ -9,6 +9,7 @@ import NIOHTTP1
 struct MovieResult: Content {
     var id: String
     var title: String
+    var type: String?
     var year: String?
     var quality: String?
     var language: String?
@@ -104,15 +105,23 @@ actor ScraperService {
         return try await runNodeScript(command: "search", arg: query)
     }
     
+    struct EpisodeResult: Content {
+        var episode: String
+        var link: String
+    }
+    
+    struct EpisodesResponse: Decodable {
+        var episodes: [EpisodeResult]
+    }
+    
     func scrapeDetail(url: String) async throws -> [String] {
         let response: LinksResponse = try await runNodeScript(command: "links", arg: url)
         return response.links
     }
     
-    func getEpisodeLinks(url: String) async throws -> [String] {
-        // The wrapper handles both movies and series links logic
-        let response: LinksResponse = try await runNodeScript(command: "links", arg: url)
-        return response.links
+    func getEpisodeLinks(url: String) async throws -> [EpisodeResult] {
+        let response: EpisodesResponse = try await runNodeScript(command: "episodes", arg: url)
+        return response.episodes
     }
     
     private func runNodeScript<T: Decodable>(command: String, arg: String) async throws -> T {

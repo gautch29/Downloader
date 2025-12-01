@@ -5,7 +5,7 @@ struct MoviesController: RouteCollection {
         let movies = routes.grouped("api", "movies")
         movies.get("search", use: search)
         movies.post("links", use: getLinks)
-        movies.post("episodes") { req async throws -> LinksResponse in
+        movies.post("episodes") { req async throws -> EpisodesResponse in
             return try await self.getEpisodes(req: req)
         }
     }
@@ -35,11 +35,15 @@ struct MoviesController: RouteCollection {
         return LinksResponse(links: links)
     }
 
-    func getEpisodes(req: Request) async throws -> LinksResponse {
+    struct EpisodesResponse: Content {
+        var episodes: [ScraperService.EpisodeResult]
+    }
+
+    func getEpisodes(req: Request) async throws -> EpisodesResponse {
         let linksReq = try req.content.decode(LinksRequest.self)
         let scraper = ScraperService(client: req.client)
-        let links = try await scraper.getEpisodeLinks(url: linksReq.url)
+        let episodes = try await scraper.getEpisodeLinks(url: linksReq.url)
         
-        return LinksResponse(links: links)
+        return EpisodesResponse(episodes: episodes)
     }
 }

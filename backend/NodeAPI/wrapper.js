@@ -24,9 +24,13 @@ async function main() {
             if (!Array.isArray(films) && films && films.error) console.error('Films search error:', films.error);
             if (!Array.isArray(series) && series && series.error) console.error('Series search error:', series.error);
 
-            const results = [...filmsList, ...seriesList].map(item => ({
+            const results = [
+                ...filmsList.map(item => ({ ...item, type: 'movie' })),
+                ...seriesList.map(item => ({ ...item, type: 'series' }))
+            ].map(item => ({
                 id: item.url.replace(BASE_URL, ''),
                 title: item.title,
+                type: item.type,
                 quality: item.quality || 'Unknown',
                 language: item.language || 'Unknown',
                 poster: item.image,
@@ -95,10 +99,37 @@ async function main() {
 
             console.log(JSON.stringify({ links: [...new Set(links)] }));
         }
+        else if (command === 'episodes') {
+            const url = args[1];
+            if (!url) throw new Error('URL argument missing');
+
+            const fullUrl = url.startsWith('http') ? url : BASE_URL + url;
+            const $ = await ztParser._getDOMElementFromURL(fullUrl);
+
+            const episodes = [];
+
+            // Strategy: Look for links that look like episodes
+            $('a').each((i, el) => {
+                const text = $(el).text().trim();
+                const href = $(el).attr('href');
+
+                // Match "Episode X" or similar patterns
+                // Also ensure it's a download link (dl-protect or similar)
+                if (href && (href.includes('dl-protect') || href.includes('1fichier'))) {
+                    if (text.match(/Episode\s+\d+/i) || text.match(/^E\d+/i)) {
+                        episodes.push({
+                            episode: text,
+                            link: href
+                        });
+                    }
+                }
+            });
+
+            console.log(JSON.stringify({ episodes: episodes }));
+        }
     } catch (error) {
         console.error(error);
         process.exit(1);
     }
 }
 main();
-
