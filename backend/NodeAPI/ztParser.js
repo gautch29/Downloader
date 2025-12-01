@@ -123,10 +123,11 @@ class ZoneTelechargementParser {
         image: this._getBaseURL() + elem.find("img").attr("src"),
         quality: detail_release.find("span:eq(0)").text(),
         language: detail_release.find("span:eq(1)").text(),
-        size: detail_release.find("span:eq(2)").text(), // Attempt to scrape size
         publishedOn: publishDate,
         publishedTimestamp: publishDate.getTime(),
       };
+
+      // console.error('Extracted size:', movieDatas.size);
       responseMovieList.push(movieDatas);
     });
 

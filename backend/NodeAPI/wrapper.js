@@ -52,19 +52,33 @@ async function main() {
             $('b').each((i, el) => {
                 const text = $(el).text();
                 if (text.toLowerCase().includes('1fichier')) {
+                    // Debug: Print structure
+                    console.error('Found 1fichier. Parent HTML:', $(el).parent().html());
+                    console.error('Next sibling HTML:', $(el).next().html());
+                    console.error('Parent Next sibling HTML:', $(el).parent().next().html());
+
                     // Check next sibling
                     let next = $(el).next();
                     if (next.is('br')) next = next.next();
 
+                    // The link is likely inside a <b> tag, e.g. <b><a ...>Télécharger</a></b>
+                    // So check if next is 'a' OR if it contains 'a'
+                    let link = null;
                     if (next.is('a')) {
-                        const href = next.attr('href');
+                        link = next;
+                    } else {
+                        link = next.find('a');
+                    }
+
+                    if (link && link.length > 0) {
+                        const href = link.attr('href');
                         if (href) links.push(href);
                     } else {
                         // Try parent's next element
                         const parentNext = $(el).parent().next();
-                        const link = parentNext.find('a');
-                        if (link.length > 0) {
-                            const href = link.attr('href');
+                        const parentLink = parentNext.find('a');
+                        if (parentLink.length > 0) {
+                            const href = parentLink.attr('href');
                             if (href) links.push(href);
                         }
                     }
