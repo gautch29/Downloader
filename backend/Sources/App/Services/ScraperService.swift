@@ -118,13 +118,15 @@ actor ScraperService {
     private func runNodeScript<T: Decodable>(command: String, arg: String) async throws -> T {
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/node")
+            
+            // Use /usr/bin/env to find node in PATH (works on macOS and Debian)
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
             
             // Assuming the script is in the working directory or a known path
             // In a real deployment, you'd want a robust way to find this path
             let scriptPath = URL(fileURLWithPath: #file).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("NodeAPI/wrapper.js").path
             
-            process.arguments = [scriptPath, command, arg]
+            process.arguments = ["node", scriptPath, command, arg]
             
             let pipe = Pipe()
             process.standardOutput = pipe
