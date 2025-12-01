@@ -13,30 +13,20 @@ async function main() {
             const query = args[1];
             if (!query) throw new Error('Query argument missing');
 
-            // Search films, series, and mangas (pages 1-3)
-            const pages = [1, 2, 3];
-            const filmsPromises = pages.map(page => ztParser.search('films', query, page));
-            const seriesPromises = pages.map(page => ztParser.search('series', query, page));
-            const mangasPromises = pages.map(page => ztParser.search('mangas', query, page));
-
-            const filmsResults = await Promise.all(filmsPromises);
-            const seriesResults = await Promise.all(seriesPromises);
-            const mangasResults = await Promise.all(mangasPromises);
+            // Search both films and series
+            const films = await ztParser.search('films', query, 1);
+            const series = await ztParser.search('series', query, 1);
 
             // Combine and format results
-            const filmsList = filmsResults.flatMap(r => Array.isArray(r) ? r : []);
-            const seriesList = seriesResults.flatMap(r => Array.isArray(r) ? r : []);
-            const mangasList = mangasResults.flatMap(r => Array.isArray(r) ? r : []);
+            const filmsList = Array.isArray(films) ? films : [];
+            const seriesList = Array.isArray(series) ? series : [];
 
-            // Log errors if any (but don't crash)
-            filmsResults.forEach(r => { if (!Array.isArray(r) && r && r.error) console.error('Films search error:', r.error); });
-            seriesResults.forEach(r => { if (!Array.isArray(r) && r && r.error) console.error('Series search error:', r.error); });
-            mangasResults.forEach(r => { if (!Array.isArray(r) && r && r.error) console.error('Mangas search error:', r.error); });
+            if (!Array.isArray(films) && films && films.error) console.error('Films search error:', films.error);
+            if (!Array.isArray(series) && series && series.error) console.error('Series search error:', series.error);
 
             const results = [
                 ...filmsList.map(item => ({ ...item, type: 'movie' })),
-                ...seriesList.map(item => ({ ...item, type: 'series' })),
-                ...mangasList.map(item => ({ ...item, type: 'series' })) // Treat mangas as series
+                ...seriesList.map(item => ({ ...item, type: 'series' }))
             ].map(item => ({
                 id: item.url.replace(BASE_URL, ''),
                 title: item.title,
