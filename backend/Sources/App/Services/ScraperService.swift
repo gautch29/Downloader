@@ -130,7 +130,18 @@ actor ScraperService {
             
             // Assuming the script is in the working directory or a known path
             // In a real deployment, you'd want a robust way to find this path
-            let scriptPath = URL(fileURLWithPath: #file).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("NodeAPI/wrapper.js").path
+            // Current file: .../backend/Sources/App/Services/ScraperService.swift
+            // We need: .../backend/NodeAPI/wrapper.js
+            // 1. deletingLastPathComponent -> Services
+            // 2. deletingLastPathComponent -> App
+            // 3. deletingLastPathComponent -> Sources
+            // 4. deletingLastPathComponent -> backend
+            let scriptPath = URL(fileURLWithPath: #file)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("NodeAPI/wrapper.js").path
             
             process.arguments = ["node", scriptPath, command, arg]
             
