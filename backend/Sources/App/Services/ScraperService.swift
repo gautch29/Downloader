@@ -135,12 +135,17 @@ actor ScraperService {
             process.arguments = ["node", scriptPath, command, arg]
             
             let pipe = Pipe()
+            let errorPipe = Pipe()
             process.standardOutput = pipe
+            process.standardError = errorPipe
+            
+            print("[DEBUG] Running Node script: \(process.executableURL?.path ?? "nil") \(process.arguments?.joined(separator: " ") ?? "")")
             
             do {
                 try process.run()
                 
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                 process.waitUntilExit()
                 
                 if process.terminationStatus == 0 {
@@ -148,13 +153,20 @@ actor ScraperService {
                         let result = try JSONDecoder().decode(T.self, from: data)
                         continuation.resume(returning: result)
                     } catch {
-                        print("[DEBUG] Node Output: \(String(data: data, encoding: .utf8) ?? "nil")")
+                        let output = String(data: data, encoding: .utf8) ?? "nil"
+                        let errorOutput = String(data: errorData, encoding: .utf8) ?? "nil"
+                        print("[DEBUG] Node Output: \(output)")
+                        print("[DEBUG] Node Error: \(errorOutput)")
                         continuation.resume(throwing: error)
                     }
                 } else {
-                    continuation.resume(throwing: Abort(.internalServerError, reason: "Node script failed with status \(process.terminationStatus)"))
+                    let errorOutput = String(data: errorData, encoding: .utf8) ?? "nil"
+                    print("[DEBUG] Node script failed with status \(process.terminationStatus)")
+                    print("[DEBUG] Node Error Output: \(errorOutput)")
+                    continuation.resume(throwing: Abort(.internalServerError, reason: "Node script failed: \(errorOutput)"))
                 }
             } catch {
+                print("[DEBUG] Process run failed: \(error)")
                 continuation.resume(throwing: error)
             }
         }
