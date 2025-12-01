@@ -11,6 +11,7 @@ export type GroupedMovie = {
     poster?: string;
     links: string[];
     qualities: { quality: string; language: string; fileSize?: string; url: string }[];
+    inPlex?: boolean;
 };
 import { MovieCard } from '@/components/movie-card';
 import { Input } from '@/components/ui/input';
@@ -45,15 +46,49 @@ export function SearchClient() {
                 throw new Error(data.error || 'Failed to search movies');
             }
 
-            setMovies((data.movies || []).map((movie: any) => ({
-                ...movie,
-                qualities: [{
+            // Group movies by title (case-insensitive)
+            const groupedMoviesMap = new Map<string, GroupedMovie>();
+
+            (data.movies || []).forEach((movie: any) => {
+                // Normalize title for grouping
+                const normalizedTitle = movie.title.toLowerCase().trim();
+
+                if (!groupedMoviesMap.has(normalizedTitle)) {
+                    // Create new group
+                    groupedMoviesMap.set(normalizedTitle, {
+                        id: movie.id, // Use the first ID as the group ID
+                        title: movie.title,
+                        year: movie.year,
+                        poster: movie.poster,
+                        links: movie.links || [],
+                        qualities: [],
+                        inPlex: movie.inPlex
+                    });
+                }
+
+                // Add quality variant to the group
+                const group = groupedMoviesMap.get(normalizedTitle)!;
+
+                // Add links if not present (though usually we fetch them later)
+                if (movie.links) {
+                    movie.links.forEach((link: string) => {
+                        if (!group.links.includes(link)) {
+                            group.links.push(link);
+                        }
+                    });
+                }
+
+                group.qualities.push({
                     quality: movie.quality || 'Unknown',
                     language: movie.language || 'Unknown',
-                    url: movie.id,
-                    fileSize: undefined
-                }]
-            })));
+                    url: movie.id, // We use the ID as the URL for fetching links
+                    fileSize: movie.size // Assuming API might return size, or undefined
+                });
+            });
+
+            // Convert map to array
+            const groupedMovies = Array.from(groupedMoviesMap.values());
+            setMovies(groupedMovies);
 
             if (data.movies && data.movies.length === 0) {
                 setError(t('search.no_results'));
