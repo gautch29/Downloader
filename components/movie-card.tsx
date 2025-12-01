@@ -39,7 +39,11 @@ export function MovieCard({ movie }: MovieCardProps) {
     const [downloadLinks, setDownloadLinks] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    const selectedQuality = movie.qualities[selectedQualityIndex];
+    const selectedQuality = movie.qualities[selectedQualityIndex] || movie.qualities[0];
+
+    if (!selectedQuality) {
+        return null;
+    }
 
     // Mouse glow effect
     const dominantColor = useDominantColor(movie.poster);

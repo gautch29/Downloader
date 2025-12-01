@@ -34,7 +34,11 @@ export function SeriesCard({ series }: SeriesCardProps) {
     const [selectedQualityIndex, setSelectedQualityIndex] = useState(0);
     const [episodeModalOpen, setEpisodeModalOpen] = useState(false);
 
-    const selectedQuality = series.qualities[selectedQualityIndex];
+    const selectedQuality = series.qualities[selectedQualityIndex] || series.qualities[0];
+
+    if (!selectedQuality) {
+        return null;
+    }
 
     // Mouse glow effect
     const dominantColor = useDominantColor(series.poster);
