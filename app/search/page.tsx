@@ -1,5 +1,5 @@
-import { SearchClient } from './search-client';
+import { UnifiedSearchClient } from '@/components/unified-search-client';
 
 export default function SearchPage() {
-    return <SearchClient />;
+    return <UnifiedSearchClient mode="all" />;
 }

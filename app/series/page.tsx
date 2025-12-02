@@ -1,5 +1,5 @@
-import { SeriesSearchClient } from './search-client';
+import { UnifiedSearchClient } from '@/components/unified-search-client';
 
 export default function SeriesSearchPage() {
-    return <SeriesSearchClient />;
+    return <UnifiedSearchClient mode="series" />;
 }

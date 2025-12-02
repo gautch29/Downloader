@@ -24,9 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await response.json();
-        // Swift returns { links: [] }, Frontend expects { episodes: [] }
-        // Assuming links are episodes for now.
-        return NextResponse.json({ episodes: data.links });
+        return NextResponse.json(data);
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

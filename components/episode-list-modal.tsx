@@ -37,7 +37,7 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
 
             console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
 
-            axios.post('/api/movies/episodes', { url: detailPageUrl })
+            axios.post('/api/series/episodes', { url: detailPageUrl })
                 .then(response => {
                     const data = response.data;
                     console.log('[Episode Modal] Response:', data);
