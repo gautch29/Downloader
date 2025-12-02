@@ -47,8 +47,15 @@ You can copy the example file to get started:
 cp config/settings.example.json config/settings.json
 ```
 
+## Documentation
+- [Technical Documentation](docs/DOCUMENTATION.md)
+- [API Documentation](docs/API_DOCUMENTATION.md)
+- [Database Guide](docs/DATABASE.md)
+- [Production Setup](docs/PRODUCTION_SETUP.md)
+- [Proxmox Deployment](docs/PROXMOX_SETUP.md)
+
 ## Deployment
-See [PROXMOX_SETUP.md](PROXMOX_SETUP.md) for instructions on deploying to a Debian CT on Proxmox.
+See [docs/PROXMOX_SETUP.md](docs/PROXMOX_SETUP.md) for instructions on deploying to a Debian CT on Proxmox.
 
 ## License
 MIT
