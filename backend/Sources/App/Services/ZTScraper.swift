@@ -1,6 +1,7 @@
 import Vapor
 import SwiftSoup
-import AsyncHTTPClient
+import Fluent
+
 
 struct ZTScraper {
     let client: Client
@@ -40,10 +41,12 @@ struct ZTScraper {
         
         print("[ZTScraper] Searching \(category) with URL: \(url)")
         
-        var request = try HTTPClient.Request(url: url, method: .GET)
-        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        print("[ZTScraper] Searching \(category) with URL: \(url)")
         
-        let response = try await client.execute(request: request).get()
+        var headers = HTTPHeaders()
+        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await client.get(URI(string: url), headers: headers)
         
         guard let body = response.body else {
             print("[ZTScraper] Empty body for \(url)")
@@ -90,10 +93,10 @@ struct ZTScraper {
     func getLinks(url: String) async throws -> [String] {
         let fullUrl = url.starts(with: "http") ? url : baseURL + url
         
-        var request = try HTTPClient.Request(url: fullUrl, method: .GET)
-        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        var headers = HTTPHeaders()
+        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        let response = try await client.execute(request: request).get()
+        let response = try await client.get(URI(string: fullUrl), headers: headers)
         guard let body = response.body else { return [] }
         let html = String(buffer: body)
         let doc = try SwiftSoup.parse(html)
@@ -155,10 +158,10 @@ struct ZTScraper {
     func getEpisodes(url: String) async throws -> [Episode] {
         let fullUrl = url.starts(with: "http") ? url : baseURL + url
         
-        var request = try HTTPClient.Request(url: fullUrl, method: .GET)
-        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        var headers = HTTPHeaders()
+        headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
-        let response = try await client.execute(request: request).get()
+        let response = try await client.get(URI(string: fullUrl), headers: headers)
         guard let body = response.body else { return [] }
         let html = String(buffer: body)
         let doc = try SwiftSoup.parse(html)
@@ -179,7 +182,7 @@ struct ZTScraper {
                 while let current = next {
                     // Stop if we hit another host header (usually <b>)
                     if try current.tagName() == "b" || !current.select("b").isEmpty() {
-                        let nextText = try current.text().trimmingCharacters(in: .whitespacesAndNewlines)
+                        let nextText = try current.text().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         // Heuristic: Hosts are short, Episodes contain "Episode"
                         if !nextText.contains("Episode") && !nextText.starts(with: "E") { // Simple check, regex is harder in SwiftSoup iteration
                             // Check if it matches E\d+ regex equivalent
@@ -197,7 +200,7 @@ struct ZTScraper {
                     }
                     
                     for link in links {
-                        let linkText = try link.text().trimmingCharacters(in: .whitespacesAndNewlines)
+                        let linkText = try link.text().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                         let href = try link.attr("href")
                         
                         if (href.contains("dl-protect") || href.contains("1fichier")) {
@@ -217,7 +220,7 @@ struct ZTScraper {
         if episodes.isEmpty {
             let allLinks = try doc.select("a")
             for link in allLinks {
-                let text = try link.text().trimmingCharacters(in: .whitespacesAndNewlines)
+                let text = try link.text().trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
                 let href = try link.attr("href")
                 
                 if (href.contains("dl-protect") || href.contains("1fichier")) {
@@ -253,7 +256,7 @@ struct ZTScraper {
         guard let rawKey = key, !rawKey.isEmpty else {
             throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set in env or DB")
         }
-        let finalKey = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalKey = rawKey.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         let cleanUrl = url.components(separatedBy: "&")[0]
         
         // Use curl via Process for 1fichier API (Force IPv4)
