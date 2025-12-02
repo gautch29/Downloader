@@ -38,12 +38,26 @@ struct ZTScraper {
         let encodedQuery = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
         let url = "\(baseURL)/?p=\(category)&search=\(encodedQuery)&page=1"
         
-        let response = try await client.get(URI(string: url))
-        guard let body = response.body else { return [] }
+        print("[ZTScraper] Searching \(category) with URL: \(url)")
+        
+        var request = try HTTPClient.Request(url: url, method: .GET)
+        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await client.execute(request: request).get()
+        
+        guard let body = response.body else {
+            print("[ZTScraper] Empty body for \(url)")
+            return []
+        }
+        
         let html = String(buffer: body)
+        // print("[ZTScraper] HTML Length: \(html.count)")
+        
         let doc = try SwiftSoup.parse(html)
         
         let elements = try doc.select("#dle-content .cover_global")
+        print("[ZTScraper] Found \(elements.size()) elements for \(category)")
+        
         var results: [ZTMovieData] = []
         
         for element in elements {
@@ -75,7 +89,11 @@ struct ZTScraper {
     // MARK: - Links (Movies)
     func getLinks(url: String) async throws -> [String] {
         let fullUrl = url.starts(with: "http") ? url : baseURL + url
-        let response = try await client.get(URI(string: fullUrl))
+        
+        var request = try HTTPClient.Request(url: fullUrl, method: .GET)
+        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await client.execute(request: request).get()
         guard let body = response.body else { return [] }
         let html = String(buffer: body)
         let doc = try SwiftSoup.parse(html)
@@ -136,7 +154,11 @@ struct ZTScraper {
     // MARK: - Episodes (Series)
     func getEpisodes(url: String) async throws -> [Episode] {
         let fullUrl = url.starts(with: "http") ? url : baseURL + url
-        let response = try await client.get(URI(string: fullUrl))
+        
+        var request = try HTTPClient.Request(url: fullUrl, method: .GET)
+        request.headers.add(name: "User-Agent", value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+        
+        let response = try await client.execute(request: request).get()
         guard let body = response.body else { return [] }
         let html = String(buffer: body)
         let doc = try SwiftSoup.parse(html)
