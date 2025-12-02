@@ -34,17 +34,65 @@ export function SeriesSearchClient() {
         setLoading(true);
         setError(null);
         setSearched(true);
+        setSeries([]);
 
         try {
-            const response = await fetch(`/api/series/search?q=${encodeURIComponent(query.trim())}`);
+            // Use the movies search endpoint which now handles series too
+            const response = await fetch(`/api/movies/search?q=${encodeURIComponent(query.trim())}`);
             const data = await response.json();
 
             if (!response.ok) {
                 throw new Error(data.error || 'Failed to search series');
             }
 
-            setSeries(data.movies || []);
-            if (data.movies && data.movies.length === 0) {
+            // Group series by title (case-insensitive)
+            const groupedSeriesMap = new Map<string, GroupedMovie>();
+
+            (data.movies || []).forEach((item: any) => {
+                // Filter for series only
+                if (item.type !== 'series') return;
+
+                // Normalize title for grouping
+                const normalizedTitle = item.title.toLowerCase().trim();
+                const key = normalizedTitle;
+
+                if (!groupedSeriesMap.has(key)) {
+                    // Create new group
+                    groupedSeriesMap.set(key, {
+                        id: item.id, // Use the first ID as the group ID
+                        title: item.title,
+                        year: item.year,
+                        poster: item.poster,
+                        links: item.links || [],
+                        qualities: []
+                    });
+                }
+
+                // Add quality variant to the group
+                const group = groupedSeriesMap.get(key)!;
+
+                // Add links if not present
+                if (item.links) {
+                    item.links.forEach((link: string) => {
+                        if (!group.links.includes(link)) {
+                            group.links.push(link);
+                        }
+                    });
+                }
+
+                group.qualities.push({
+                    quality: item.quality || 'Unknown',
+                    language: item.language || 'Unknown',
+                    url: item.id, // We use the ID as the URL for fetching links/episodes
+                    fileSize: item.size
+                });
+            });
+
+            // Convert map to array
+            const groupedSeries = Array.from(groupedSeriesMap.values());
+            setSeries(groupedSeries);
+
+            if (groupedSeries.length === 0) {
                 setError(t('search.no_results'));
             }
         } catch (err: any) {
