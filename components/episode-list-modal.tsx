@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
@@ -65,11 +65,11 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
             <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold">
-                        {seriesTitle}
+                        {seriesTitle} - {quality}
                     </DialogTitle>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        {quality}
-                    </p>
+                    <DialogDescription className="hidden">
+                        Select an episode to download
+                    </DialogDescription>
                 </DialogHeader>
 
                 {loading && (
