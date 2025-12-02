@@ -120,6 +120,38 @@ export function SearchClient() {
                 </p>
             </div>
 
+            {/* Search Bar */}
+            <div className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 py-4 mb-6 md:mb-8 transition-all duration-200">
+                <div className="max-w-2xl mx-auto px-4">
+                    <form onSubmit={handleSearch} className="relative group">
+                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <div className="relative flex gap-2 shadow-lg shadow-zinc-200/50 dark:shadow-black/50 rounded-2xl p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                                <Input
+                                    type="text"
+                                    placeholder={t('search.placeholder')}
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    className="pl-9 h-11 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-zinc-400"
+                                />
+                            </div>
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="h-11 px-6 rounded-xl bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white font-medium shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                {loading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    t('search.button')
+                                )}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             {/* Results Grid */}
             {movies.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
