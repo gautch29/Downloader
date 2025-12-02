@@ -109,21 +109,73 @@ async function main() {
             const episodes = [];
 
             // Strategy: Look for links that look like episodes
-            $('a').each((i, el) => {
-                const text = $(el).text().trim();
-                const href = $(el).attr('href');
+            // Strategy: Find the "1fichier" header and extract links until the next header
+            let oneFichierFound = false;
 
-                // Match "Episode X" or similar patterns
-                // Also ensure it's a download link (dl-protect or similar)
-                if (href && (href.includes('dl-protect') || href.includes('1fichier'))) {
-                    if (text.match(/Episode\s+\d+/i) || text.match(/^E\d+/i)) {
-                        episodes.push({
-                            episode: text,
-                            link: href
+            // Try to find 1fichier specific section first
+            $('b').each((i, el) => {
+                const text = $(el).text().trim().toLowerCase();
+                if (text.includes('1fichier')) {
+                    oneFichierFound = true;
+
+                    // Iterate through next siblings until we hit another bold tag (likely another host)
+                    let next = $(el).parent().next(); // Usually the structure is <b><div>1fichier</div></b> then <br> then links
+
+                    // If the structure is different (e.g. <b>1fichier</b> directly), adjust
+                    if (!next.length) {
+                        next = $(el).next();
+                    }
+
+                    while (next.length) {
+                        // If we hit another host header (usually in <b>), stop
+                        if (next.is('b') || next.find('b').length > 0) {
+                            // Check if it's just a bold episode title or a host
+                            // Hosts are usually simple text like "Uptobox"
+                            // But sometimes "Episode 1" is bold too.
+                            // Heuristic: Hosts are usually short words, Episodes contain "Episode"
+                            const nextText = next.text().trim();
+                            if (!nextText.includes('Episode') && !nextText.match(/^E\d+/)) {
+                                break;
+                            }
+                        }
+
+                        // Check for links in this element
+                        const links = next.is('a') ? next : next.find('a');
+                        links.each((j, linkEl) => {
+                            const linkText = $(linkEl).text().trim();
+                            const href = $(linkEl).attr('href');
+
+                            if (href && (href.includes('dl-protect') || href.includes('1fichier'))) {
+                                if (linkText.match(/Episode\s+\d+/i) || linkText.match(/^E\d+/i)) {
+                                    episodes.push({
+                                        episode: linkText,
+                                        link: href
+                                    });
+                                }
+                            }
                         });
+
+                        next = next.next();
                     }
                 }
             });
+
+            // Fallback: if 1fichier section not found, or no episodes found in it, try generic search but filter for 1fichier if possible
+            if (episodes.length === 0) {
+                $('a').each((i, el) => {
+                    const text = $(el).text().trim();
+                    const href = $(el).attr('href');
+
+                    if (href && (href.includes('dl-protect') || href.includes('1fichier'))) {
+                        if (text.match(/Episode\s+\d+/i) || text.match(/^E\d+/i)) {
+                            episodes.push({
+                                episode: text,
+                                link: href
+                            });
+                        }
+                    }
+                });
+            }
 
             console.log(JSON.stringify({ episodes: episodes }));
         }
