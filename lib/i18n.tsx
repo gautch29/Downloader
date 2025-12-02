@@ -16,7 +16,7 @@ const translations: Translations = {
         'nav.home': 'Home',
         'nav.search': 'Search Movies',
         'nav.series': 'Search Series',
-        'nav.books': 'Search Books',
+
         'nav.settings': 'Settings',
         'nav.logout': 'Logout',
         'nav.back': 'Back',
@@ -99,7 +99,7 @@ const translations: Translations = {
         'nav.home': 'Accueil',
         'nav.search': 'Rechercher Films',
         'nav.series': 'Rechercher Séries',
-        'nav.books': 'Rechercher Livres',
+
         'nav.settings': 'Paramètres',
         'nav.logout': 'Déconnexion',
         'nav.back': 'Retour',
