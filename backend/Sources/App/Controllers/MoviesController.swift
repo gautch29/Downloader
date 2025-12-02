@@ -10,13 +10,20 @@ struct MoviesController: RouteCollection {
         }
     }
 
-    func search(req: Request) async throws -> SearchResult {
+    struct SearchResponse: Content {
+        var movies: [ZTScraper.SearchResult]
+        var total: Int
+    }
+
+    func search(req: Request) async throws -> SearchResponse {
         guard let query = req.query[String.self, at: "q"] else {
             throw Abort(.badRequest, reason: "Missing query parameter")
         }
         
-        let scraper = ScraperService(client: req.client)
-        return try await scraper.searchMovies(query: query)
+        let scraper = ZTScraper(client: req.client)
+        let results = try await scraper.search(query: query)
+        
+        return SearchResponse(movies: results, total: results.count)
     }
 
     struct LinksRequest: Content {
@@ -29,20 +36,20 @@ struct MoviesController: RouteCollection {
 
     func getLinks(req: Request) async throws -> LinksResponse {
         let linksReq = try req.content.decode(LinksRequest.self)
-        let scraper = ScraperService(client: req.client)
-        let links = try await scraper.scrapeDetail(url: linksReq.url)
+        let scraper = ZTScraper(client: req.client)
+        let links = try await scraper.getLinks(url: linksReq.url)
         
         return LinksResponse(links: links)
     }
 
     struct EpisodesResponse: Content {
-        var episodes: [ScraperService.EpisodeResult]
+        var episodes: [ZTScraper.Episode]
     }
 
     func getEpisodes(req: Request) async throws -> EpisodesResponse {
         let linksReq = try req.content.decode(LinksRequest.self)
-        let scraper = ScraperService(client: req.client)
-        let episodes = try await scraper.getEpisodeLinks(url: linksReq.url)
+        let scraper = ZTScraper(client: req.client)
+        let episodes = try await scraper.getEpisodes(url: linksReq.url)
         
         return EpisodesResponse(episodes: episodes)
     }
