@@ -57,7 +57,8 @@ actor DownloadManager {
             // If it's a 1fichier link, use ScraperService to get the direct link
             if download.url.contains("1fichier.com") {
                 app.logger.info("Resolving 1fichier link...")
-                let scraper = ScraperService(client: app.client)
+                app.logger.info("Resolving 1fichier link...")
+                let scraper = ZTScraper(client: app.client)
                 directLink = try await scraper.getDownloadLink(url: download.url, on: app.db)
                 app.logger.info("Resolved 1fichier link: \(directLink)")
             }

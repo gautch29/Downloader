@@ -209,6 +209,75 @@ struct ZTScraper {
         
         return episodes
     }
+    // MARK: - 1fichier
+    struct OneFichierResponse: Decodable {
+        var url: String?
+        var link: String?
+        var status: String?
+        var message: String?
+    }
+
+    func getDownloadLink(url: String, on db: Database) async throws -> String {
+        // Try env first
+        var key = Environment.get("ONEFICHIER_API_KEY")
+        
+        // If not in env, try DB
+        if key == nil {
+            if let settings = try? await Setting.query(on: db).first() {
+                key = settings.onefichierApiKey
+            }
+        }
+        
+        guard let rawKey = key, !rawKey.isEmpty else {
+            throw Abort(.internalServerError, reason: "ONEFICHIER_API_KEY not set in env or DB")
+        }
+        let finalKey = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanUrl = url.components(separatedBy: "&")[0]
+        
+        // Use curl via Process for 1fichier API (Force IPv4)
+        return try await withCheckedThrowingContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
+            process.arguments = [
+                "-4", // Force IPv4
+                "-s",
+                "-X", "POST",
+                "https://api.1fichier.com/v1/download/get_token.cgi",
+                "-H", "Content-Type: application/json",
+                "-H", "Authorization: Bearer \(finalKey)",
+                "-d", "{\"url\": \"\(cleanUrl)\"}"
+            ]
+            
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            // Do not capture stderr
+            
+            do {
+                try process.run()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                process.waitUntilExit()
+                
+                if process.terminationStatus == 0 {
+                    do {
+                        let result = try JSONDecoder().decode(OneFichierResponse.self, from: data)
+                        if let link = result.url ?? result.link {
+                            continuation.resume(returning: link)
+                        } else {
+                            continuation.resume(throwing: Abort(.badRequest, reason: "No download link: \(result.message ?? "Unknown")"))
+                        }
+                    } catch {
+                         print("[DEBUG] Curl Output: \(String(data: data, encoding: .utf8) ?? "nil")")
+                         continuation.resume(throwing: error)
+                    }
+                } else {
+                    continuation.resume(throwing: Abort(.internalServerError, reason: "Curl failed with status \(process.terminationStatus)"))
+                }
+            } catch {
+                continuation.resume(throwing: error)
+            }
+        }
+    }
 }
 
 struct ZTMovieData {
