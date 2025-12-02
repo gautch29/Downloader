@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
+import axios from 'axios';
 
 interface Episode {
     episode: string;
@@ -34,13 +35,11 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
 
             console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
 
-            fetch('/api/movies/episodes', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: detailPageUrl })
-            })
-                .then(response => response.json())
-                .then(data => {
+            console.log('[Episode Modal] Fetching episodes for URL:', detailPageUrl);
+
+            axios.post('/api/movies/episodes', { url: detailPageUrl })
+                .then(response => {
+                    const data = response.data;
                     console.log('[Episode Modal] Response:', data);
 
                     if (data.error) {
@@ -52,7 +51,8 @@ export function EpisodeListModal({ open, onOpenChange, seriesTitle, quality, det
                 })
                 .catch(err => {
                     console.error('Episode fetch error:', err);
-                    setError(err.message || 'Failed to fetch episodes');
+                    const message = err.response?.data?.error || err.message || 'Failed to fetch episodes';
+                    setError(message);
                 })
                 .finally(() => {
                     setLoading(false);
