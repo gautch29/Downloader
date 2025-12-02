@@ -133,7 +133,13 @@ export function SeriesCard({ series }: SeriesCardProps) {
                                 <SelectContent>
                                     {series.qualities.map((quality, index) => (
                                         <SelectItem key={index} value={index.toString()}>
-                                            <span className="font-medium">{quality.quality}</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-medium">{quality.quality}</span>
+                                                <span className="text-xs text-zinc-500">{quality.language}</span>
+                                                {quality.fileSize && (
+                                                    <span className="text-xs text-zinc-400">({quality.fileSize})</span>
+                                                )}
+                                            </div>
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -143,6 +149,14 @@ export function SeriesCard({ series }: SeriesCardProps) {
                                 <span className="px-2 py-1 rounded bg-zinc-100 dark:bg-zinc-800 font-medium">
                                     {selectedQuality.quality}
                                 </span>
+                                <span className="text-zinc-500 dark:text-zinc-400">
+                                    {selectedQuality.language}
+                                </span>
+                                {selectedQuality.fileSize && (
+                                    <span className="text-zinc-400 dark:text-zinc-500">
+                                        {selectedQuality.fileSize}
+                                    </span>
+                                )}
                             </div>
                         )}
 

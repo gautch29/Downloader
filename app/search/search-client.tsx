@@ -121,35 +121,40 @@ export function SearchClient() {
             </div>
 
             {/* Search Bar */}
-            <div className="sticky top-0 z-30 bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-200/50 dark:border-zinc-800/50 py-4 mb-6 md:mb-8 transition-all duration-200">
-                <div className="max-w-2xl mx-auto px-4">
-                    <form onSubmit={handleSearch} className="relative group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="relative flex gap-2 shadow-lg shadow-zinc-200/50 dark:shadow-black/50 rounded-2xl p-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
-                                <Input
-                                    type="text"
-                                    placeholder={t('search.placeholder')}
-                                    value={query}
-                                    onChange={(e) => setQuery(e.target.value)}
-                                    className="pl-9 h-11 border-0 bg-transparent focus-visible:ring-0 text-base placeholder:text-zinc-400"
-                                />
-                            </div>
-                            <Button
-                                type="submit"
+            <div className="sticky top-[64px] z-30 -mx-4 px-4 md:static md:mx-0 md:px-0 md:z-auto mb-6 md:mb-8">
+                <GlassCard className="animate-fade-in-up delay-100 shadow-lg md:shadow-sm backdrop-blur-xl bg-white/90 dark:bg-zinc-900/90 md:bg-white/60 md:dark:bg-zinc-900/60">
+                    <form onSubmit={handleSearch} className="flex gap-2 p-3 md:p-6">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-zinc-400" />
+                            <Input
+                                type="text"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder={t('search.placeholder')}
+                                className="pl-10 h-10 md:h-14 text-base md:text-lg bg-zinc-100/50 dark:bg-zinc-800/50 md:bg-white/80 md:dark:bg-zinc-800/80 border-transparent md:border-zinc-200 md:dark:border-zinc-700 focus:bg-white dark:focus:bg-zinc-800 focus:border-[#0071E3] dark:focus:border-[#0A84FF] focus:ring-[#0071E3]/20 dark:focus:ring-[#0A84FF]/20 rounded-xl md:rounded-2xl text-zinc-900 dark:text-white placeholder:text-zinc-400 transition-all"
                                 disabled={loading}
-                                className="h-11 px-6 rounded-xl bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white font-medium shadow-sm transition-all hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                {loading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    t('search.button')
-                                )}
-                            </Button>
+                            />
                         </div>
+                        <Button
+                            type="submit"
+                            disabled={loading || !query.trim()}
+                            size="icon"
+                            className="h-10 w-10 md:h-14 md:w-auto md:px-8 bg-[#0071E3] dark:bg-[#0A84FF] hover:bg-[#0077ED] dark:hover:bg-[#0071E3] text-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all shrink-0"
+                        >
+                            {loading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    <Search className="h-5 w-5 md:hidden" />
+                                    <span className="hidden md:flex items-center">
+                                        <Search className="h-5 w-5 mr-2" />
+                                        {t('search.button')}
+                                    </span>
+                                </>
+                            )}
+                        </Button>
                     </form>
-                </div>
+                </GlassCard>
             </div>
 
             {/* Results Grid */}
