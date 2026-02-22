@@ -182,12 +182,17 @@ async def process_download_job(job_id: str) -> None:
             try:
                 target_dir = _resolve_target_dir(job.target_dir)
                 resolved = await onefichier.resolve_download(job.source_url)
+                job.file_name = resolved.filename
+                job.total_bytes = resolved.expected_size
+                await db.commit()
 
                 async def on_progress(downloaded: int, total: int | None) -> None:
                     job.bytes_downloaded = downloaded
-                    job.total_bytes = total
+                    job.total_bytes = total or job.total_bytes
                     if total and total > 0:
                         job.progress_percent = min(100.0, (downloaded * 100.0) / total)
+                    elif job.total_bytes and job.total_bytes > 0:
+                        job.progress_percent = min(100.0, (downloaded * 100.0) / job.total_bytes)
                     else:
                         job.progress_percent = 0.0
                     await db.commit()
@@ -196,6 +201,7 @@ async def process_download_job(job_id: str) -> None:
                     resolved.url,
                     destination_dir=target_dir,
                     name_hint=resolved.filename or job.source_url,
+                    expected_total_bytes=resolved.expected_size,
                     progress_callback=on_progress,
                 )
                 await plex.refresh_library()

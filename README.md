@@ -60,11 +60,12 @@ docker compose up -d --build
 
 ## Notes on 1fichier API
 
-The backend attempts API link resolution when `ONEFICHIER_API_KEY` is set using:
+The backend resolves links through the 1fichier API (premium flow required) using:
 
 - `POST {ONEFICHIER_API_BASE}/v1/download/get_token.cgi`
+- `POST {ONEFICHIER_API_BASE}/v1/file/info.cgi`
 
-If your account/API requires a different endpoint or payload, update `backend/app/services/downloader.py` accordingly.
+If API returns `KO`, the job now fails immediately with the API message (no fallback to HTML/public page).
 
 ## Recommended hardening for internet exposure
 

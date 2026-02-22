@@ -11,6 +11,7 @@ import httpx
 class ResolvedDownload:
     url: str
     filename: str | None = None
+    expected_size: int | None = None
 
 
 @dataclass
@@ -27,23 +28,87 @@ class OneFichierClient:
         self.api_base = api_base.rstrip("/")
 
     async def resolve_download(self, source_url: str) -> ResolvedDownload:
-        # If API key is configured, attempt API-based link resolution first.
-        if self.api_key:
-            endpoint = f"{self.api_base}/v1/download/get_token.cgi"
-            headers = {"Authorization": f"Bearer {self.api_key}"}
-            payload = {"url": source_url}
+        if not self.api_key:
+            raise RuntimeError("ONEFICHIER_API_KEY is required to resolve download links")
 
-            async with httpx.AsyncClient(timeout=30) as client:
-                response = await client.post(endpoint, json=payload, headers=headers)
-                if response.status_code < 400:
-                    data = response.json()
-                    resolved = data.get("url") or data.get("link")
-                    filename = data.get("filename") or data.get("name")
-                    if resolved:
-                        return ResolvedDownload(url=resolved, filename=filename)
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "User-Agent": "PlexDownloader/1.0",
+        }
 
-        # Fallback: direct URL flow (works if provided URL is already downloadable).
-        return ResolvedDownload(url=source_url)
+        async with httpx.AsyncClient(timeout=30) as client:
+            token_data = await self._call_json(
+                client,
+                f"{self.api_base}/v1/download/get_token.cgi",
+                {"url": source_url},
+                headers,
+            )
+            self._raise_if_ko(token_data, "download/get_token.cgi")
+            resolved_url = token_data.get("url") or token_data.get("link")
+            if not resolved_url:
+                raise RuntimeError("1fichier API did not return a direct download URL")
+
+            # Filename usually comes from file/info.cgi.
+            file_info = await self._call_json(
+                client,
+                f"{self.api_base}/v1/file/info.cgi",
+                {"url": source_url},
+                headers,
+                tolerate_ko=True,
+            )
+
+        return ResolvedDownload(
+            url=str(resolved_url),
+            filename=self._extract_filename(file_info),
+            expected_size=self._extract_size(file_info),
+        )
+
+    async def _call_json(
+        self,
+        client: httpx.AsyncClient,
+        endpoint: str,
+        payload: dict[str, object],
+        headers: dict[str, str],
+        tolerate_ko: bool = False,
+    ) -> dict[str, object]:
+        response = await client.post(endpoint, json=payload, headers=headers)
+        if response.status_code >= 400:
+            raise RuntimeError(f"1fichier API HTTP {response.status_code}: {response.text[:200]}")
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise RuntimeError("1fichier API returned non-JSON response") from exc
+
+        if not isinstance(data, dict):
+            raise RuntimeError("1fichier API returned unexpected payload")
+
+        if not tolerate_ko:
+            self._raise_if_ko(data, endpoint)
+        return data
+
+    def _raise_if_ko(self, data: dict[str, object], endpoint_name: str) -> None:
+        status = str(data.get("status", "")).upper()
+        if status in {"KO", "NOK", "ERROR"}:
+            message = str(data.get("message") or data.get("error") or "Unknown API error")
+            raise RuntimeError(f"1fichier API error ({endpoint_name}): {message}")
+
+    def _extract_filename(self, file_info: dict[str, object]) -> str | None:
+        if not file_info:
+            return None
+        if str(file_info.get("status", "")).upper() in {"KO", "NOK", "ERROR"}:
+            return None
+        value = file_info.get("filename") or file_info.get("name")
+        return str(value) if isinstance(value, str) and value.strip() else None
+
+    def _extract_size(self, file_info: dict[str, object]) -> int | None:
+        if not file_info:
+            return None
+        raw = file_info.get("size")
+        try:
+            value = int(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return None
+        return value if value >= 0 else None
 
 
 class FileDownloader:
@@ -55,6 +120,7 @@ class FileDownloader:
         url: str,
         destination_dir: Path,
         name_hint: str | None = None,
+        expected_total_bytes: int | None = None,
         progress_callback=None,
     ) -> DownloadResult:
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
@@ -62,7 +128,7 @@ class FileDownloader:
                 response.raise_for_status()
                 self._validate_stream_headers(response)
 
-                total_bytes = self._parse_int_header(response.headers.get("content-length"))
+                total_bytes = self._parse_int_header(response.headers.get("content-length")) or expected_total_bytes
 
                 file_name = self._filename_from_headers(response.headers.get("content-disposition"))
                 if not file_name or self._is_generic_filename(file_name):
@@ -86,6 +152,12 @@ class FileDownloader:
 
                 if progress_callback:
                     await progress_callback(bytes_downloaded, total_bytes)
+
+                if total_bytes is not None and bytes_downloaded != total_bytes:
+                    target_path.unlink(missing_ok=True)
+                    raise RuntimeError(
+                        f"Incomplete download: expected {total_bytes} bytes, got {bytes_downloaded} bytes"
+                    )
 
                 # Fail hard on suspicious tiny/binaryless files that are usually HTML error pages.
                 if bytes_downloaded < 1024 and target_path.suffix.lower() in {"", ".bin", ".html"}:
