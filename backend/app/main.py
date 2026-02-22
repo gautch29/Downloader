@@ -27,13 +27,24 @@ async def startup() -> None:
         await conn.run_sync(Base.metadata.create_all)
         columns = await conn.execute(text("PRAGMA table_info(download_jobs)"))
         column_names = {row[1] for row in columns.fetchall()}
+        statements: list[str] = []
+
         if "target_dir" not in column_names:
             default_target_dir = str(settings.download_dir).replace("'", "''")
-            await conn.execute(
-                text(
-                    f"ALTER TABLE download_jobs ADD COLUMN target_dir TEXT NOT NULL DEFAULT '{default_target_dir}'"
-                )
+            statements.append(
+                f"ALTER TABLE download_jobs ADD COLUMN target_dir TEXT NOT NULL DEFAULT '{default_target_dir}'"
             )
+        if "file_name" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN file_name TEXT")
+        if "bytes_downloaded" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN bytes_downloaded INTEGER NOT NULL DEFAULT 0")
+        if "total_bytes" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN total_bytes INTEGER")
+        if "progress_percent" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN progress_percent FLOAT NOT NULL DEFAULT 0")
+
+        for stmt in statements:
+            await conn.execute(text(stmt))
 
 
 @app.get("/health")

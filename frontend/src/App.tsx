@@ -26,6 +26,16 @@ async function api<T>(path: string, init: RequestInit = {}, token?: string): Pro
   return response.json() as Promise<T>;
 }
 
+function formatBytes(bytes: number): string {
+  if (bytes <= 0) {
+    return '0 B';
+  }
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[exponent]}`;
+}
+
 export function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [accessKey, setAccessKey] = useState('');
@@ -330,8 +340,24 @@ export function App() {
               {jobs.map((job) => (
                 <article key={job.id} className={`job-card ${job.status}`}>
                   <p className="job-status">{job.status.toUpperCase()}</p>
+                  {job.file_name && <p className="job-file">{job.file_name}</p>}
                   <p className="job-url">{job.source_url}</p>
                   <p className="job-path">Target: {job.target_dir}</p>
+                  <div className="progress-wrap">
+                    <div className="progress-meta">
+                      <span>{job.total_bytes ? `${job.progress_percent.toFixed(1)}%` : 'Streaming...'}</span>
+                      <span>
+                        {formatBytes(job.bytes_downloaded)}
+                        {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
+                      </span>
+                    </div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
+                      />
+                    </div>
+                  </div>
                   {job.saved_path && <p className="job-path">Saved: {job.saved_path}</p>}
                   {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
                 </article>

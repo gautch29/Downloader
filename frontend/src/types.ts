@@ -4,7 +4,11 @@ export interface DownloadJob {
   id: string;
   source_url: string;
   target_dir: string;
+  file_name: string | null;
   saved_path: string | null;
+  bytes_downloaded: number;
+  total_bytes: number | null;
+  progress_percent: number;
   status: DownloadStatus;
   error_message: string | null;
   created_at: string;

@@ -35,7 +35,11 @@ class DownloadResponse(BaseModel):
     id: str
     source_url: str
     target_dir: str
+    file_name: str | None
     saved_path: str | None
+    bytes_downloaded: int
+    total_bytes: int | None
+    progress_percent: float
     status: DownloadStatus
     error_message: str | None
     created_at: datetime

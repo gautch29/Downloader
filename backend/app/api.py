@@ -170,6 +170,9 @@ async def process_download_job(job_id: str) -> None:
                 return
 
             job.status = DownloadStatus.running
+            job.bytes_downloaded = 0
+            job.total_bytes = None
+            job.progress_percent = 0.0
             await db.commit()
 
             downloader = FileDownloader()
@@ -178,12 +181,31 @@ async def process_download_job(job_id: str) -> None:
 
             try:
                 target_dir = _resolve_target_dir(job.target_dir)
-                resolved_url = await onefichier.resolve_download_url(job.source_url)
-                saved = await downloader.download(resolved_url, destination_dir=target_dir, name_hint=job.source_url)
+                resolved = await onefichier.resolve_download(job.source_url)
+
+                async def on_progress(downloaded: int, total: int | None) -> None:
+                    job.bytes_downloaded = downloaded
+                    job.total_bytes = total
+                    if total and total > 0:
+                        job.progress_percent = min(100.0, (downloaded * 100.0) / total)
+                    else:
+                        job.progress_percent = 0.0
+                    await db.commit()
+
+                result = await downloader.download(
+                    resolved.url,
+                    destination_dir=target_dir,
+                    name_hint=resolved.filename or job.source_url,
+                    progress_callback=on_progress,
+                )
                 await plex.refresh_library()
 
                 job.status = DownloadStatus.success
-                job.saved_path = str(saved)
+                job.saved_path = str(result.path)
+                job.file_name = result.file_name
+                job.bytes_downloaded = result.bytes_downloaded
+                job.total_bytes = result.total_bytes
+                job.progress_percent = 100.0
                 job.error_message = None
             except Exception as exc:
                 job.status = DownloadStatus.failed
