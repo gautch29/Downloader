@@ -10,7 +10,11 @@ settings = get_settings()
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
-    return pwd_context.verify(plain_password, password_hash)
+    try:
+        return pwd_context.verify(plain_password, password_hash)
+    except Exception:
+        # Avoid leaking backend errors to clients; invalid/unreadable hash is treated as auth failure.
+        return False
 
 
 def create_access_token(subject: str) -> str:
