@@ -6,7 +6,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend/data:/app/data
-      - /mnt/plex/movies:/downloads/movies
+      - /mnt/PlexZFS4:/downloads
     expose:
       - "8000"
     restart: unless-stopped

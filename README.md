@@ -48,18 +48,24 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - optional: `DOWNLOAD_PRESETS`
 - optional: `BROWSE_ROOTS`
 
-4. Point compose movie mount to your real Plex movie directory:
+4. Point compose storage mount to your real host directory:
 
-- `docker-compose.yml` -> `/mnt/plex/movies:/downloads/movies`
+- `docker-compose.yml` -> `/mnt/PlexZFS4:/downloads`
 
-5. Start the stack:
+5. Set download paths inside that mounted `/downloads` tree in `backend/.env`, for example:
+
+- `DOWNLOAD_DIR=/downloads/Films seuls`
+- `DOWNLOAD_PRESETS=["/downloads/Films seuls","/downloads/Movies"]`
+- `BROWSE_ROOTS=["/downloads"]`
+
+6. Start the stack:
 
 ```bash
 docker compose up -d --build
 ```
 
-6. Open UI at `http://YOUR_CT_IP:8080`
-7. API is proxied at same origin (`/api`) via frontend nginx. Backend port is internal-only by default.
+7. Open UI at `http://YOUR_CT_IP:8080`
+8. API is proxied at same origin (`/api`) via frontend nginx. Backend port is internal-only by default.
 
 ## Notes on 1fichier API
 

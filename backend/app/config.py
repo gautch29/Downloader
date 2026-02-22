@@ -28,8 +28,8 @@ class Settings(BaseSettings):
 
     sqlite_path: Path = Path("./data/app.db")
     job_log_path: Path = Path("./data/download_jobs.log")
-    download_dir: Path = Path("/downloads/movies")
-    download_presets: list[Path] = Field(default_factory=lambda: [Path("/downloads/movies")])
+    download_dir: Path = Path("/downloads")
+    download_presets: list[Path] = Field(default_factory=lambda: [Path("/downloads")])
     browse_roots: list[Path] = Field(default_factory=lambda: [Path("/downloads")])
 
     onefichier_api_key: str | None = None
