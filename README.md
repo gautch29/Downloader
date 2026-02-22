@@ -57,6 +57,7 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - `DOWNLOAD_DIR=/mnt/PlexZFS4/Films seuls`
 - `DOWNLOAD_PRESETS=["/mnt/PlexZFS4/Films seuls","/mnt/PlexZFS2/Animés","/mnt/PlexZFS2/Séries"]`
 - `BROWSE_ROOTS=["/mnt/PlexZFS4","/mnt/PlexZFS2"]`
+- Startup now validates these paths exist and are writable (it will fail fast if mounts are wrong).
 
 6. Start the stack:
 

@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from pathlib import Path
 
@@ -28,9 +29,9 @@ class Settings(BaseSettings):
 
     sqlite_path: Path = Path("./data/app.db")
     job_log_path: Path = Path("./data/download_jobs.log")
-    download_dir: Path = Path("/downloads")
-    download_presets: list[Path] = Field(default_factory=lambda: [Path("/downloads")])
-    browse_roots: list[Path] = Field(default_factory=lambda: [Path("/downloads")])
+    download_dir: Path = Path("/mnt")
+    download_presets: list[Path] = Field(default_factory=lambda: [Path("/mnt")])
+    browse_roots: list[Path] = Field(default_factory=lambda: [Path("/mnt")])
 
     onefichier_api_key: str | None = None
     onefichier_api_base: str = "https://api.1fichier.com"
@@ -45,7 +46,18 @@ def get_settings() -> Settings:
     settings = Settings()
     settings.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
     settings.job_log_path.parent.mkdir(parents=True, exist_ok=True)
-    settings.download_dir.mkdir(parents=True, exist_ok=True)
-    for preset in settings.download_presets:
-        preset.mkdir(parents=True, exist_ok=True)
+
+    # Never auto-create download paths: this can hide bad mounts and fill container FS.
+    all_paths = [settings.download_dir, *settings.download_presets, *settings.browse_roots]
+    checked: set[str] = set()
+    for path in all_paths:
+        key = str(path)
+        if key in checked:
+            continue
+        checked.add(key)
+        resolved = path.resolve()
+        if not resolved.exists() or not resolved.is_dir():
+            raise ValueError(f"Configured download path does not exist or is not a directory: {resolved}")
+        if not os.access(resolved, os.W_OK | os.X_OK):
+            raise ValueError(f"Configured download path is not writable: {resolved}")
     return settings

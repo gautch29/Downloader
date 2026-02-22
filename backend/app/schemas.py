@@ -71,3 +71,10 @@ class FolderCreateRequest(BaseModel):
 
 class JobsCleanResponse(BaseModel):
     removed_count: int
+
+
+class StorageStatusResponse(BaseModel):
+    path: str
+    total_bytes: int
+    used_bytes: int
+    free_bytes: int

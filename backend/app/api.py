@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, Response, status
@@ -19,6 +20,7 @@ from app.schemas import (
     FolderPresetsResponse,
     JobsCleanResponse,
     LoginRequest,
+    StorageStatusResponse,
     TokenResponse,
 )
 from app.security import enforce_login_rate_limit, enforce_rate_limit, require_admin
@@ -127,6 +129,18 @@ async def login(payload: LoginRequest, request: Request) -> TokenResponse:
 async def list_preset_folders(_: str = Depends(require_admin)) -> FolderPresetsResponse:
     presets = [str(_resolve_within_roots(path, _get_allowed_roots())) for path in settings.download_presets]
     return FolderPresetsResponse(presets=presets)
+
+
+@router.get("/system/storage", response_model=StorageStatusResponse)
+async def get_storage_status(_: str = Depends(require_admin)) -> StorageStatusResponse:
+    path = settings.download_dir.resolve()
+    usage = shutil.disk_usage(path)
+    return StorageStatusResponse(
+        path=str(path),
+        total_bytes=usage.total,
+        used_bytes=usage.used,
+        free_bytes=usage.free,
+    )
 
 
 @router.get("/folders/browse", response_model=FolderBrowseResponse)

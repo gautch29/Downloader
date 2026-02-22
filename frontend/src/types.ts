@@ -29,3 +29,10 @@ export interface FolderBrowseResponse {
 export interface FolderPresetsResponse {
   presets: string[];
 }
+
+export interface StorageStatus {
+  path: string;
+  total_bytes: number;
+  used_bytes: number;
+  free_bytes: number;
+}
