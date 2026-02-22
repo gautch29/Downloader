@@ -389,6 +389,9 @@ async def process_download_job(job_id: str) -> None:
                     destination_dir=target_dir,
                     name_hint=resolved.filename or job.source_url,
                     expected_total_bytes=resolved.expected_size,
+                    connect_timeout_seconds=settings.download_connect_timeout_seconds,
+                    read_timeout_seconds=settings.download_read_timeout_seconds,
+                    retry_count=settings.download_retry_count,
                     progress_callback=on_progress,
                     control_signal_callback=get_control_signal,
                 )

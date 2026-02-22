@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     max_login_attempts_per_15m: int = 20
 
     max_downloads_per_hour: int = 20
+    download_connect_timeout_seconds: int = 20
+    download_read_timeout_seconds: int = 90
+    download_retry_count: int = 2
 
     sqlite_path: Path = Path("./data/app.db")
     job_log_path: Path = Path("./data/download_jobs.log")

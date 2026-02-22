@@ -186,74 +186,106 @@ class FileDownloader:
         destination_dir: Path,
         name_hint: str | None = None,
         expected_total_bytes: int | None = None,
+        connect_timeout_seconds: int = 20,
+        read_timeout_seconds: int = 90,
+        retry_count: int = 2,
         progress_callback=None,
         control_signal_callback=None,
     ) -> DownloadResult:
-        async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
-            async with client.stream("GET", url) as response:
-                response.raise_for_status()
-                self._validate_stream_headers(response)
+        timeout = httpx.Timeout(connect=connect_timeout_seconds, read=read_timeout_seconds, write=60, pool=30)
+        attempts = max(1, retry_count + 1)
+        last_error: Exception | None = None
 
-                total_bytes = self._parse_int_header(response.headers.get("content-length")) or expected_total_bytes
+        for attempt in range(1, attempts + 1):
+            target_path: Path | None = None
+            try:
+                async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+                    async with client.stream("GET", url) as response:
+                        response.raise_for_status()
+                        self._validate_stream_headers(response)
 
-                file_name = self._filename_from_headers(response.headers.get("content-disposition"))
-                if not file_name or self._is_generic_filename(file_name):
-                    file_name = self._filename_from_url(str(response.url))
-                if (not file_name or self._is_generic_filename(file_name)) and name_hint:
-                    file_name = self._filename_from_url(name_hint)
+                        total_bytes = (
+                            self._parse_int_header(response.headers.get("content-length")) or expected_total_bytes
+                        )
 
-                safe_name = self._sanitize_filename(file_name or "download.bin")
-                target_path = self._deduplicate_target(destination_dir / safe_name)
+                        file_name = self._filename_from_headers(response.headers.get("content-disposition"))
+                        if not file_name or self._is_generic_filename(file_name):
+                            file_name = self._filename_from_url(str(response.url))
+                        if (not file_name or self._is_generic_filename(file_name)) and name_hint:
+                            file_name = self._filename_from_url(name_hint)
 
-                bytes_downloaded = 0
-                last_callback_at = asyncio.get_event_loop().time()
-                with open(target_path, "wb") as output:
-                    async for chunk in response.aiter_bytes(chunk_size=1024 * 256):
-                        signal = control_signal_callback() if control_signal_callback else None
-                        if signal == "pause":
-                            raise DownloadInterrupted(
-                                reason="paused",
-                                path=target_path,
-                                bytes_downloaded=bytes_downloaded,
-                                total_bytes=total_bytes,
-                            )
-                        if signal == "stop":
-                            raise DownloadInterrupted(
-                                reason="stopped",
-                                path=target_path,
-                                bytes_downloaded=bytes_downloaded,
-                                total_bytes=total_bytes,
-                            )
-                        output.write(chunk)
-                        bytes_downloaded += len(chunk)
-                        now = asyncio.get_event_loop().time()
-                        if progress_callback and (now - last_callback_at >= 0.6):
+                        safe_name = self._sanitize_filename(file_name or "download.bin")
+                        target_path = self._deduplicate_target(destination_dir / safe_name)
+
+                        bytes_downloaded = 0
+                        last_callback_at = asyncio.get_event_loop().time()
+                        with open(target_path, "wb") as output:
+                            async for chunk in response.aiter_bytes(chunk_size=1024 * 256):
+                                signal = control_signal_callback() if control_signal_callback else None
+                                if signal == "pause":
+                                    raise DownloadInterrupted(
+                                        reason="paused",
+                                        path=target_path,
+                                        bytes_downloaded=bytes_downloaded,
+                                        total_bytes=total_bytes,
+                                    )
+                                if signal == "stop":
+                                    raise DownloadInterrupted(
+                                        reason="stopped",
+                                        path=target_path,
+                                        bytes_downloaded=bytes_downloaded,
+                                        total_bytes=total_bytes,
+                                    )
+                                output.write(chunk)
+                                bytes_downloaded += len(chunk)
+                                now = asyncio.get_event_loop().time()
+                                if progress_callback and (now - last_callback_at >= 0.6):
+                                    await progress_callback(bytes_downloaded, total_bytes)
+                                    last_callback_at = now
+
+                        if progress_callback:
                             await progress_callback(bytes_downloaded, total_bytes)
-                            last_callback_at = now
 
-                if progress_callback:
-                    await progress_callback(bytes_downloaded, total_bytes)
+                        if total_bytes is not None and bytes_downloaded != total_bytes:
+                            target_path.unlink(missing_ok=True)
+                            raise RuntimeError(
+                                f"Incomplete download: expected {total_bytes} bytes, got {bytes_downloaded} bytes"
+                            )
 
-                if total_bytes is not None and bytes_downloaded != total_bytes:
+                        # Fail hard on suspicious tiny/binaryless files that are usually HTML error pages.
+                        if bytes_downloaded < 1024 and target_path.suffix.lower() in {"", ".bin", ".html"}:
+                            with open(target_path, "rb") as handle:
+                                prefix = handle.read(256).lower()
+                            if b"<html" in prefix or b"1fichier" in prefix:
+                                target_path.unlink(missing_ok=True)
+                                raise RuntimeError("1fichier returned an HTML page instead of a file")
+
+                        return DownloadResult(
+                            path=target_path,
+                            file_name=target_path.name,
+                            bytes_downloaded=bytes_downloaded,
+                            total_bytes=total_bytes,
+                        )
+            except DownloadInterrupted:
+                raise
+            except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.ReadError, httpx.RemoteProtocolError) as exc:
+                last_error = exc
+                if target_path is not None:
                     target_path.unlink(missing_ok=True)
-                    raise RuntimeError(
-                        f"Incomplete download: expected {total_bytes} bytes, got {bytes_downloaded} bytes"
-                    )
+                if attempt < attempts:
+                    await asyncio.sleep(min(2 * attempt, 5))
+                    continue
+                raise RuntimeError(
+                    f"Download stalled after {attempts} attempts (read timeout {read_timeout_seconds}s)"
+                ) from exc
+            except Exception as exc:
+                if target_path is not None:
+                    target_path.unlink(missing_ok=True)
+                raise
 
-                # Fail hard on suspicious tiny/binaryless files that are usually HTML error pages.
-                if bytes_downloaded < 1024 and target_path.suffix.lower() in {"", ".bin", ".html"}:
-                    with open(target_path, "rb") as handle:
-                        prefix = handle.read(256).lower()
-                    if b"<html" in prefix or b"1fichier" in prefix:
-                        target_path.unlink(missing_ok=True)
-                        raise RuntimeError("1fichier returned an HTML page instead of a file")
-
-                return DownloadResult(
-                    path=target_path,
-                    file_name=target_path.name,
-                    bytes_downloaded=bytes_downloaded,
-                    total_bytes=total_bytes,
-                )
+        if last_error:
+            raise RuntimeError("Download failed due to network instability") from last_error
+        raise RuntimeError("Download failed")
 
     def _validate_stream_headers(self, response: httpx.Response) -> None:
         content_type = (response.headers.get("content-type") or "").lower()

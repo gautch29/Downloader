@@ -21,6 +21,9 @@ uvicorn app.main:app --reload --port 8000
 - `DOWNLOAD_PRESETS`: JSON array shown in UI presets
 - `BROWSE_ROOTS`: JSON array of allowed roots for browsing/creating folders
 - `JOB_LOG_PATH`: JSONL audit log for job lifecycle/removal events
+- `DOWNLOAD_CONNECT_TIMEOUT_SECONDS`: connect timeout for file stream
+- `DOWNLOAD_READ_TIMEOUT_SECONDS`: read timeout to detect stalled downloads
+- `DOWNLOAD_RETRY_COUNT`: retries after transient stream timeout/errors
 
 ## Access key hash helper (Argon2)
 
