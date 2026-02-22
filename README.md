@@ -56,6 +56,7 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 
 - `DOWNLOAD_DIR=/mnt/PlexZFS4/Films seuls`
 - `DOWNLOAD_PRESETS=["/mnt/PlexZFS4/Films seuls","/mnt/PlexZFS2/Animés","/mnt/PlexZFS2/Séries"]`
+- `DOWNLOAD_PRESET_LABELS=["Movies","Anime","Series"]`
 - `BROWSE_ROOTS=["/mnt/PlexZFS4","/mnt/PlexZFS2"]`
 - Startup now validates these paths exist and are writable (it will fail fast if mounts are wrong).
   `DOWNLOAD_DIR` must be writable; invalid/non-writable optional presets/roots are skipped.
@@ -77,6 +78,8 @@ The backend resolves links through the 1fichier API (premium flow required) usin
 - `POST {ONEFICHIER_API_BASE}/v1/file/info.cgi`
 
 If API returns `KO`, the job now fails immediately with the API message (no fallback to HTML/public page).
+
+On successful download completion, the backend triggers a Plex library refresh and exposes scan status in each job (`requesting`, `success`, `failed`), so the UI can confirm scan launch.
 
 ## Recommended hardening for internet exposure
 

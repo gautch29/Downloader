@@ -19,6 +19,7 @@ uvicorn app.main:app --reload --port 8000
 
 - `DOWNLOAD_DIR`: default folder when no custom target is selected
 - `DOWNLOAD_PRESETS`: JSON array shown in UI presets
+- `DOWNLOAD_PRESET_LABELS`: optional JSON array of friendly names for each preset (same order)
 - `BROWSE_ROOTS`: JSON array of allowed roots for browsing/creating folders
 - `JOB_LOG_PATH`: JSONL audit log for job lifecycle/removal events
 - `DOWNLOAD_CONNECT_TIMEOUT_SECONDS`: connect timeout for file stream

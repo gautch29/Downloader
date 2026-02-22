@@ -11,6 +11,10 @@ export interface DownloadJob {
   progress_percent: number;
   status: DownloadStatus;
   error_message: string | null;
+  plex_scan_status: 'not_requested' | 'requesting' | 'success' | 'failed';
+  plex_scan_message: string | null;
+  plex_scan_requested_at: string | null;
+  plex_scan_completed_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,7 +31,12 @@ export interface FolderBrowseResponse {
 }
 
 export interface FolderPresetsResponse {
-  presets: string[];
+  presets: FolderPreset[];
+}
+
+export interface FolderPreset {
+  label: string;
+  path: string;
 }
 
 export interface StorageStatus {

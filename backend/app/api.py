@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+from datetime import datetime
 import shutil
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from app.schemas import (
     FolderCreateRequest,
     FolderBrowseResponse,
     FolderEntry,
+    FolderPreset,
     FolderPresetsResponse,
     JobsCleanResponse,
     LoginRequest,
@@ -71,9 +73,10 @@ def _resolve_within_roots(path_value: str | Path, roots: list[Path]) -> Path:
 
 
 def _get_allowed_roots() -> list[Path]:
-    roots = [*settings.browse_roots]
-    if settings.download_dir not in roots:
-        roots.append(settings.download_dir)
+    roots: list[Path] = []
+    for candidate in [*settings.browse_roots, settings.download_dir, *settings.download_presets]:
+        if candidate not in roots:
+            roots.append(candidate)
     return roots
 
 
@@ -87,6 +90,26 @@ def _resolve_target_dir(target_dir: str | None) -> Path:
     return resolved
 
 
+def _derive_preset_label(path: Path) -> str:
+    raw_name = path.name.strip()
+    if not raw_name:
+        return str(path)
+
+    lowered = raw_name.lower()
+    semantic_map: list[tuple[set[str], str]] = [
+        ({"films", "film", "movie", "movies"}, "Movies"),
+        ({"serie", "series", "série", "séries", "tv"}, "Series"),
+        ({"anime", "animé", "animés", "animation"}, "Anime"),
+        ({"documentary", "documentaires", "docs"}, "Documentaries"),
+    ]
+    for keywords, label in semantic_map:
+        if any(keyword in lowered for keyword in keywords):
+            return label
+
+    cleaned = " ".join(raw_name.replace("_", " ").replace("-", " ").split())
+    return cleaned[:1].upper() + cleaned[1:] if cleaned else str(path)
+
+
 def _log_job_event(job: DownloadJob, event: str, extra: dict[str, object] | None = None) -> None:
     payload: dict[str, object] = {
         "status": job.status.value,
@@ -98,6 +121,10 @@ def _log_job_event(job: DownloadJob, event: str, extra: dict[str, object] | None
         "total_bytes": job.total_bytes if job.total_bytes is not None else 0,
         "progress_percent": job.progress_percent,
         "error_message": job.error_message or "",
+        "plex_scan_status": job.plex_scan_status,
+        "plex_scan_message": job.plex_scan_message or "",
+        "plex_scan_requested_at": job.plex_scan_requested_at.isoformat() if job.plex_scan_requested_at else "",
+        "plex_scan_completed_at": job.plex_scan_completed_at.isoformat() if job.plex_scan_completed_at else "",
     }
     if extra:
         payload.update(extra)
@@ -127,7 +154,14 @@ async def login(payload: LoginRequest, request: Request) -> TokenResponse:
 
 @router.get("/folders/presets", response_model=FolderPresetsResponse)
 async def list_preset_folders(_: str = Depends(require_admin)) -> FolderPresetsResponse:
-    presets = [str(_resolve_within_roots(path, _get_allowed_roots())) for path in settings.download_presets]
+    labels = settings.download_preset_labels
+    presets: list[FolderPreset] = []
+    for index, preset_path in enumerate(settings.download_presets):
+        resolved = str(_resolve_within_roots(preset_path, _get_allowed_roots()))
+        label = labels[index].strip() if index < len(labels) else ""
+        if not label:
+            label = _derive_preset_label(Path(resolved))
+        presets.append(FolderPreset(label=label, path=resolved))
     return FolderPresetsResponse(presets=presets)
 
 
@@ -365,6 +399,10 @@ async def process_download_job(job_id: str) -> None:
             job.bytes_downloaded = 0
             job.total_bytes = None
             job.progress_percent = 0.0
+            job.plex_scan_status = "not_requested"
+            job.plex_scan_message = None
+            job.plex_scan_requested_at = None
+            job.plex_scan_completed_at = None
             job.pause_requested = False
             job.stop_requested = False
             await db.commit()
@@ -409,7 +447,25 @@ async def process_download_job(job_id: str) -> None:
                     progress_callback=on_progress,
                     control_signal_callback=get_control_signal,
                 )
-                await plex.refresh_library()
+
+                job.plex_scan_status = "requesting"
+                job.plex_scan_message = "Requesting Plex library refresh"
+                job.plex_scan_requested_at = datetime.utcnow()
+                job.plex_scan_completed_at = None
+                await db.commit()
+                _log_job_event(job, "plex_scan_requested")
+
+                try:
+                    await plex.refresh_library()
+                    job.plex_scan_status = "success"
+                    job.plex_scan_message = "Plex library scan started"
+                    _log_job_event(job, "plex_scan_started")
+                except Exception as plex_exc:
+                    job.plex_scan_status = "failed"
+                    job.plex_scan_message = f"Plex scan failed: {plex_exc}"
+                    _log_job_event(job, "plex_scan_failed", {"exception": str(plex_exc)})
+                finally:
+                    job.plex_scan_completed_at = datetime.utcnow()
 
                 job.status = DownloadStatus.success
                 job.saved_path = str(result.path)

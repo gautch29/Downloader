@@ -42,6 +42,10 @@ class DownloadResponse(BaseModel):
     progress_percent: float
     status: DownloadStatus
     error_message: str | None
+    plex_scan_status: str
+    plex_scan_message: str | None
+    plex_scan_requested_at: datetime | None
+    plex_scan_completed_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -60,8 +64,13 @@ class FolderBrowseResponse(BaseModel):
     directories: list[FolderEntry]
 
 
+class FolderPreset(BaseModel):
+    label: str
+    path: str
+
+
 class FolderPresetsResponse(BaseModel):
-    presets: list[str]
+    presets: list[FolderPreset]
 
 
 class FolderCreateRequest(BaseModel):

@@ -48,6 +48,16 @@ async def startup() -> None:
             statements.append("ALTER TABLE download_jobs ADD COLUMN stop_requested BOOLEAN NOT NULL DEFAULT 0")
         if "is_hidden" not in column_names:
             statements.append("ALTER TABLE download_jobs ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0")
+        if "plex_scan_status" not in column_names:
+            statements.append(
+                "ALTER TABLE download_jobs ADD COLUMN plex_scan_status TEXT NOT NULL DEFAULT 'not_requested'"
+            )
+        if "plex_scan_message" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN plex_scan_message TEXT")
+        if "plex_scan_requested_at" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN plex_scan_requested_at DATETIME")
+        if "plex_scan_completed_at" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN plex_scan_completed_at DATETIME")
 
         for stmt in statements:
             await conn.execute(text(stmt))

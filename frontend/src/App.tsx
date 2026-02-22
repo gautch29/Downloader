@@ -1,9 +1,10 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DownloadJob,
   DownloadStatus,
   FolderBrowseResponse,
   FolderEntry,
+  FolderPreset,
   FolderPresetsResponse,
   StorageStatus
 } from './types';
@@ -52,6 +53,27 @@ function formatStatus(status: DownloadStatus): string {
   return status.slice(0, 1).toUpperCase() + status.slice(1);
 }
 
+function getPlexScanSummary(job: DownloadJob): string {
+  if (job.plex_scan_status === 'success') {
+    return 'Plex scan started';
+  }
+  if (job.plex_scan_status === 'failed') {
+    return 'Plex scan failed';
+  }
+  if (job.plex_scan_status === 'requesting') {
+    return 'Starting Plex scan...';
+  }
+  return 'Plex scan pending';
+}
+
+type NoticeKind = 'success' | 'warning';
+
+interface UiNotice {
+  id: string;
+  kind: NoticeKind;
+  message: string;
+}
+
 function formatTime(iso: string): string {
   const value = new Date(iso);
   if (Number.isNaN(value.getTime())) {
@@ -92,8 +114,8 @@ export function App() {
   const [storage, setStorage] = useState<StorageStatus | null>(null);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
-  const [presets, setPresets] = useState<string[]>([]);
-  const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [presets, setPresets] = useState<FolderPreset[]>([]);
+  const [selectedPresetPath, setSelectedPresetPath] = useState<string>('');
   const [customTargetPath, setCustomTargetPath] = useState<string>('');
 
   const [showBrowser, setShowBrowser] = useState(false);
@@ -103,9 +125,22 @@ export function App() {
   const [browseDirectories, setBrowseDirectories] = useState<FolderEntry[]>([]);
 
   const [jobSearch, setJobSearch] = useState('');
+  const [notices, setNotices] = useState<UiNotice[]>([]);
+  const scanNoticeIdsRef = useRef<Set<string>>(new Set());
 
   const isAuthed = useMemo(() => Boolean(token), [token]);
-  const activeTarget = customTargetPath || selectedPreset;
+  const presetByPath = useMemo(() => {
+    const map = new Map<string, FolderPreset>();
+    for (const preset of presets) {
+      map.set(preset.path, preset);
+    }
+    return map;
+  }, [presets]);
+  const selectedPreset = selectedPresetPath ? presetByPath.get(selectedPresetPath) ?? null : null;
+  const activeTarget = customTargetPath || selectedPresetPath;
+  const activeTargetLabel = customTargetPath
+    ? 'Custom folder'
+    : selectedPreset?.label ?? (activeTarget ? 'Preset folder' : 'Select a folder');
 
   const refreshJobs = async () => {
     if (!token) {
@@ -125,6 +160,14 @@ export function App() {
     }
   };
 
+  const pushNotice = (kind: NoticeKind, message: string) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setNotices((prev) => [...prev, { id, kind, message }]);
+    window.setTimeout(() => {
+      setNotices((prev) => prev.filter((notice) => notice.id !== id));
+    }, 7000);
+  };
+
   useEffect(() => {
     if (!token) {
       return;
@@ -142,7 +185,7 @@ export function App() {
         setJobs(list);
         setStorage(storageStatus);
         setPresets(presetResponse.presets);
-        setSelectedPreset(presetResponse.presets[0] ?? '');
+        setSelectedPresetPath(presetResponse.presets[0]?.path ?? '');
 
         setBrowseCurrentPath(browse.current_path);
         setBrowseParentPath(browse.parent_path);
@@ -157,6 +200,39 @@ export function App() {
     const id = setInterval(refreshJobs, 4000);
     return () => clearInterval(id);
   }, [token]);
+
+  useEffect(() => {
+    for (const job of jobs) {
+      if (job.status !== 'success') {
+        continue;
+      }
+      if (job.plex_scan_status !== 'success' && job.plex_scan_status !== 'failed') {
+        continue;
+      }
+      if (!job.plex_scan_completed_at) {
+        continue;
+      }
+
+      const completedAt = new Date(job.plex_scan_completed_at).getTime();
+      if (Number.isNaN(completedAt) || Date.now() - completedAt > 60_000) {
+        continue;
+      }
+
+      const key = `${job.id}:${job.plex_scan_status}`;
+      if (scanNoticeIdsRef.current.has(key)) {
+        continue;
+      }
+      scanNoticeIdsRef.current.add(key);
+
+      const fileLabel = job.file_name || 'downloaded file';
+      if (job.plex_scan_status === 'success') {
+        pushNotice('success', `Plex scan launched for "${fileLabel}".`);
+      } else {
+        const details = job.plex_scan_message ? ` ${job.plex_scan_message}` : '';
+        pushNotice('warning', `Download completed but Plex scan failed for "${fileLabel}".${details}`);
+      }
+    }
+  }, [jobs]);
 
   const browsePath = async (path?: string) => {
     if (!token) {
@@ -297,10 +373,14 @@ export function App() {
     localStorage.removeItem('token');
     setToken(null);
     setJobs([]);
+    setPresets([]);
+    setSelectedPresetPath('');
     setShowBrowser(false);
     setCustomTargetPath('');
     setStorage(null);
     setLastSyncedAt(null);
+    setNotices([]);
+    scanNoticeIdsRef.current.clear();
   };
 
   const stats = useMemo(() => {
@@ -352,6 +432,23 @@ export function App() {
             </div>
           )}
         </header>
+
+        {isAuthed && notices.length > 0 && (
+          <aside className="notice-stack" aria-live="polite">
+            {notices.map((notice) => (
+              <article key={notice.id} className={`notice notice-${notice.kind}`}>
+                <p>{notice.message}</p>
+                <button
+                  type="button"
+                  className="notice-close"
+                  onClick={() => setNotices((prev) => prev.filter((item) => item.id !== notice.id))}
+                >
+                  Dismiss
+                </button>
+              </article>
+            ))}
+          </aside>
+        )}
 
         {!isAuthed ? (
           <section className="auth-wrap">
@@ -410,7 +507,7 @@ export function App() {
                 </header>
 
                 <div className="active-destination">
-                  <span>Active destination</span>
+                  <span>{activeTargetLabel}</span>
                   <code>{activeTarget || 'Select a folder'}</code>
                 </div>
 
@@ -428,11 +525,11 @@ export function App() {
                 <label className="field">
                   <span>Destination preset</span>
                   <div className="split-row">
-                    <select value={selectedPreset} onChange={(event) => setSelectedPreset(event.target.value)}>
+                    <select value={selectedPresetPath} onChange={(event) => setSelectedPresetPath(event.target.value)}>
                       {presets.length === 0 && <option value="">No preset available</option>}
                       {presets.map((preset) => (
-                        <option key={preset} value={preset}>
-                          {preset}
+                        <option key={preset.path} value={preset.path}>
+                          {preset.label}
                         </option>
                       ))}
                     </select>
@@ -441,7 +538,7 @@ export function App() {
                       className="button button-ghost"
                       onClick={async () => {
                         setShowBrowser(true);
-                        await browsePath(customTargetPath || undefined);
+                        await browsePath(customTargetPath || selectedPresetPath || undefined);
                       }}
                     >
                       Browse
@@ -573,10 +670,9 @@ export function App() {
                           {job.file_name}
                         </p>
                       )}
-                      <p className="job-link" title={job.source_url}>
-                        {job.source_url}
-                      </p>
-                      <p className="job-target">Target: {job.target_dir}</p>
+                      {presetByPath.get(job.target_dir)?.label && (
+                        <p className="job-destination">Preset: {presetByPath.get(job.target_dir)?.label}</p>
+                      )}
 
                       <div className="progress-wrap">
                         <div className="progress-meta">
@@ -594,12 +690,26 @@ export function App() {
                         </div>
                       </div>
 
-                      {job.saved_path && (
-                        <p className="job-target saved-path" title={job.saved_path}>
-                          Saved: {job.saved_path}
-                        </p>
-                      )}
+                      <p className={`plex-scan-pill scan-${job.plex_scan_status}`}>{getPlexScanSummary(job)}</p>
+                      {job.plex_scan_message && <p className="plex-scan-note">{job.plex_scan_message}</p>}
                       {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
+
+                      <details className="job-details">
+                        <summary>Show details</summary>
+                        <div className="job-details-body">
+                          <p className="job-target" title={job.source_url}>
+                            Link: {job.source_url}
+                          </p>
+                          <p className="job-target" title={job.target_dir}>
+                            Target: {job.target_dir}
+                          </p>
+                          {job.saved_path && (
+                            <p className="job-target saved-path" title={job.saved_path}>
+                              Saved: {job.saved_path}
+                            </p>
+                          )}
+                        </div>
+                      </details>
 
                       <div className="job-actions">
                         {(job.status === 'running' || job.status === 'queued') && (

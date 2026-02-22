@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     job_log_path: Path = Path("./data/download_jobs.log")
     download_dir: Path = Path("/mnt")
     download_presets: list[Path] = Field(default_factory=lambda: [Path("/mnt")])
+    download_preset_labels: list[str] = Field(default_factory=list)
     browse_roots: list[Path] = Field(default_factory=lambda: [Path("/mnt")])
 
     onefichier_api_key: str | None = None
