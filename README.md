@@ -57,6 +57,7 @@ docker compose up -d --build
 ```
 
 6. Open UI at `http://YOUR_CT_IP:8080`
+7. API is proxied at same origin (`/api`) via frontend nginx. Backend port is internal-only by default.
 
 ## Notes on 1fichier API
 
