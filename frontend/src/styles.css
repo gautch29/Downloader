@@ -1,0 +1,152 @@
+:root {
+  color-scheme: light;
+  --bg0: #f3eee4;
+  --bg1: #d7e9f2;
+  --ink: #1d2026;
+  --card: rgba(255, 255, 255, 0.74);
+  --line: rgba(15, 26, 33, 0.16);
+  --accent: #2a7d6e;
+  --danger: #8c1e22;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Sora', sans-serif;
+  color: var(--ink);
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 0%, #f8d9b5, transparent 50%),
+    radial-gradient(circle at 100% 100%, #b3d4ce, transparent 45%),
+    linear-gradient(135deg, var(--bg0), var(--bg1));
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.panel {
+  width: min(920px, 100%);
+  backdrop-filter: blur(12px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 22px 48px rgba(10, 30, 34, 0.15);
+}
+
+.hero h1 {
+  margin: 8px 0;
+  font-size: clamp(2rem, 3.8vw, 3.2rem);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  color: #335761;
+}
+
+.subtitle {
+  margin-top: 0;
+  max-width: 66ch;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jobs {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.job {
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.job.success {
+  border-color: #2a7d6e;
+}
+
+.job.failed {
+  border-color: #8c1e22;
+}
+
+.status {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  margin: 0 0 6px;
+}
+
+.url,
+.saved,
+.error {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+
+.error-banner,
+.error {
+  color: var(--danger);
+}
+
+.empty {
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .panel {
+    padding: 18px;
+    border-radius: 14px;
+  }
+}
