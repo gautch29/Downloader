@@ -48,15 +48,15 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - optional: `DOWNLOAD_PRESETS`
 - optional: `BROWSE_ROOTS`
 
-4. Point compose storage mount to your real host directory:
+4. Mount CT `/mnt` directly into container `/mnt`:
 
-- `docker-compose.yml` -> `/mnt/PlexZFS4:/downloads`
+- `docker-compose.yml` -> `/mnt:/mnt`
 
-5. Set download paths inside that mounted `/downloads` tree in `backend/.env`, for example:
+5. Set download paths using the same absolute paths as on the CT in `backend/.env`, for example:
 
-- `DOWNLOAD_DIR=/downloads/Films seuls`
-- `DOWNLOAD_PRESETS=["/downloads/Films seuls","/downloads/Movies"]`
-- `BROWSE_ROOTS=["/downloads"]`
+- `DOWNLOAD_DIR=/mnt/PlexZFS4/Films seuls`
+- `DOWNLOAD_PRESETS=["/mnt/PlexZFS4/Films seuls","/mnt/PlexZFS2/Animés","/mnt/PlexZFS2/Séries"]`
+- `BROWSE_ROOTS=["/mnt/PlexZFS4","/mnt/PlexZFS2"]`
 
 6. Start the stack:
 

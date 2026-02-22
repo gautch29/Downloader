@@ -6,7 +6,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend/data:/app/data
-      - /mnt/PlexZFS4:/downloads
+      - /mnt:/mnt
     expose:
       - "8000"
     restart: unless-stopped
