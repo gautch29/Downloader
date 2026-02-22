@@ -36,32 +36,45 @@ class OneFichierClient:
             "User-Agent": "PlexDownloader/1.0",
         }
 
-        async with httpx.AsyncClient(timeout=30) as client:
-            token_data = await self._call_json(
-                client,
-                f"{self.api_base}/v1/download/get_token.cgi",
-                {"url": source_url},
-                headers,
-            )
-            self._raise_if_ko(token_data, "download/get_token.cgi")
-            resolved_url = token_data.get("url") or token_data.get("link")
-            if not resolved_url:
-                raise RuntimeError("1fichier API did not return a direct download URL")
+        candidates = self._build_url_candidates(source_url)
+        last_error: RuntimeError | None = None
+        for candidate_url in candidates:
+            try:
+                async with httpx.AsyncClient(timeout=30) as client:
+                    token_data = await self._call_json(
+                        client,
+                        f"{self.api_base}/v1/download/get_token.cgi",
+                        {"url": candidate_url},
+                        headers,
+                    )
+                    self._raise_if_ko(token_data, "download/get_token.cgi")
+                    resolved_url = token_data.get("url") or token_data.get("link")
+                    if not resolved_url:
+                        raise RuntimeError("1fichier API did not return a direct download URL")
 
-            # Filename usually comes from file/info.cgi.
-            file_info = await self._call_json(
-                client,
-                f"{self.api_base}/v1/file/info.cgi",
-                {"url": source_url},
-                headers,
-                tolerate_ko=True,
-            )
+                    # Filename usually comes from file/info.cgi.
+                    file_info = await self._call_json(
+                        client,
+                        f"{self.api_base}/v1/file/info.cgi",
+                        {"url": candidate_url},
+                        headers,
+                        tolerate_ko=True,
+                    )
 
-        return ResolvedDownload(
-            url=str(resolved_url),
-            filename=self._extract_filename(file_info),
-            expected_size=self._extract_size(file_info),
-        )
+                return ResolvedDownload(
+                    url=str(resolved_url),
+                    filename=self._extract_filename(file_info),
+                    expected_size=self._extract_size(file_info),
+                )
+            except RuntimeError as exc:
+                last_error = exc
+                if self._is_not_found_error(exc):
+                    continue
+                raise
+
+        if last_error:
+            raise last_error
+        raise RuntimeError("Failed to resolve 1fichier URL")
 
     async def _call_json(
         self,
@@ -72,11 +85,11 @@ class OneFichierClient:
         tolerate_ko: bool = False,
     ) -> dict[str, object]:
         response = await client.post(endpoint, json=payload, headers=headers)
-        if response.status_code >= 400:
-            raise RuntimeError(f"1fichier API HTTP {response.status_code}: {response.text[:200]}")
         try:
             data = response.json()
         except ValueError as exc:
+            if response.status_code >= 400:
+                raise RuntimeError(f"1fichier API HTTP {response.status_code}: {response.text[:200]}") from exc
             raise RuntimeError("1fichier API returned non-JSON response") from exc
 
         if not isinstance(data, dict):
@@ -84,6 +97,11 @@ class OneFichierClient:
 
         if not tolerate_ko:
             self._raise_if_ko(data, endpoint)
+        elif response.status_code >= 400:
+            # For tolerated KO calls, still expose true transport-level failures.
+            status_value = str(data.get("status", "")).upper()
+            if status_value not in {"KO", "NOK", "ERROR"}:
+                raise RuntimeError(f"1fichier API HTTP {response.status_code}: {response.text[:200]}")
         return data
 
     def _raise_if_ko(self, data: dict[str, object], endpoint_name: str) -> None:
@@ -109,6 +127,45 @@ class OneFichierClient:
         except (TypeError, ValueError):
             return None
         return value if value >= 0 else None
+
+    def _build_url_candidates(self, source_url: str) -> list[str]:
+        original = source_url.strip()
+        candidates = [original]
+        canonical = self._canonical_public_url(original)
+        if canonical and canonical not in candidates:
+            candidates.append(canonical)
+        return candidates
+
+    def _canonical_public_url(self, source_url: str) -> str | None:
+        parsed = urlparse(source_url)
+        if "1fichier.com" not in parsed.netloc.lower():
+            return None
+        if not parsed.query:
+            return None
+
+        first = parsed.query.split("&", maxsplit=1)[0].strip()
+        if not first:
+            return None
+
+        # Public links are often represented as "?<id>&af=...".
+        if "=" in first:
+            key, value = first.split("=", maxsplit=1)
+            if key.lower() in {"id", "file", "url"} and value:
+                token = value.strip()
+            elif key and not value:
+                token = key.strip()
+            else:
+                token = value.strip()
+        else:
+            token = first
+
+        if not token:
+            return None
+        return f"https://1fichier.com/?{token}"
+
+    def _is_not_found_error(self, exc: RuntimeError) -> bool:
+        message = str(exc).lower()
+        return "resource not found" in message or "#665" in message
 
 
 class FileDownloader:
