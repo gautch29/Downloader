@@ -403,11 +403,16 @@ export function App() {
             </section>
 
             <section className="workflow-grid">
-              <form className="panel" onSubmit={submitDownload}>
+              <form className="panel composer-panel" onSubmit={submitDownload}>
                 <header className="panel-head">
                   <h2>New Download</h2>
-                  <p className="panel-sub">Destination: {activeTarget || 'Select a folder'}</p>
+                  <p className="panel-sub">Paste a 1fichier link and choose exactly where the file should land.</p>
                 </header>
+
+                <div className="active-destination">
+                  <span>Active destination</span>
+                  <code>{activeTarget || 'Select a folder'}</code>
+                </div>
 
                 <label className="field">
                   <span>1fichier link</span>
@@ -532,7 +537,7 @@ export function App() {
                 <header className="panel-head panel-head-space">
                   <div>
                     <h2>Recent Jobs</h2>
-                    <p className="panel-sub">{filteredJobs.length} visible</p>
+                    <p className="panel-sub">{filteredJobs.length} shown</p>
                   </div>
                   <button type="button" className="button button-ghost" onClick={cleanJobs}>
                     Clean completed
@@ -563,8 +568,14 @@ export function App() {
                         <p className="job-time">{formatTime(job.updated_at)}</p>
                       </header>
 
-                      {job.file_name && <p className="job-title">{job.file_name}</p>}
-                      <p className="job-link">{job.source_url}</p>
+                      {job.file_name && (
+                        <p className="job-title" title={job.file_name}>
+                          {job.file_name}
+                        </p>
+                      )}
+                      <p className="job-link" title={job.source_url}>
+                        {job.source_url}
+                      </p>
                       <p className="job-target">Target: {job.target_dir}</p>
 
                       <div className="progress-wrap">
@@ -575,7 +586,7 @@ export function App() {
                             {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
                           </span>
                         </div>
-                        <div className="progress-track">
+                        <div className={`progress-track status-${job.status}`}>
                           <div
                             className="progress-value"
                             style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
@@ -583,7 +594,11 @@ export function App() {
                         </div>
                       </div>
 
-                      {job.saved_path && <p className="job-target">Saved: {job.saved_path}</p>}
+                      {job.saved_path && (
+                        <p className="job-target saved-path" title={job.saved_path}>
+                          Saved: {job.saved_path}
+                        </p>
+                      )}
                       {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
 
                       <div className="job-actions">
