@@ -67,3 +67,7 @@ class FolderPresetsResponse(BaseModel):
 class FolderCreateRequest(BaseModel):
     parent_path: str = Field(min_length=1, max_length=4096)
     name: str = Field(min_length=1, max_length=255)
+
+
+class JobsCleanResponse(BaseModel):
+    removed_count: int

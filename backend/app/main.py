@@ -42,6 +42,12 @@ async def startup() -> None:
             statements.append("ALTER TABLE download_jobs ADD COLUMN total_bytes INTEGER")
         if "progress_percent" not in column_names:
             statements.append("ALTER TABLE download_jobs ADD COLUMN progress_percent FLOAT NOT NULL DEFAULT 0")
+        if "pause_requested" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN pause_requested BOOLEAN NOT NULL DEFAULT 0")
+        if "stop_requested" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN stop_requested BOOLEAN NOT NULL DEFAULT 0")
+        if "is_hidden" not in column_names:
+            statements.append("ALTER TABLE download_jobs ADD COLUMN is_hidden BOOLEAN NOT NULL DEFAULT 0")
 
         for stmt in statements:
             await conn.execute(text(stmt))

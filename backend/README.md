@@ -20,6 +20,7 @@ uvicorn app.main:app --reload --port 8000
 - `DOWNLOAD_DIR`: default folder when no custom target is selected
 - `DOWNLOAD_PRESETS`: JSON array shown in UI presets
 - `BROWSE_ROOTS`: JSON array of allowed roots for browsing/creating folders
+- `JOB_LOG_PATH`: JSONL audit log for job lifecycle/removal events
 
 ## Access key hash helper (Argon2)
 

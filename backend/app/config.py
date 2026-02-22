@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     max_downloads_per_hour: int = 20
 
     sqlite_path: Path = Path("./data/app.db")
+    job_log_path: Path = Path("./data/download_jobs.log")
     download_dir: Path = Path("/downloads/movies")
     download_presets: list[Path] = Field(default_factory=lambda: [Path("/downloads/movies")])
     browse_roots: list[Path] = Field(default_factory=lambda: [Path("/downloads")])
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     settings = Settings()
     settings.sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+    settings.job_log_path.parent.mkdir(parents=True, exist_ok=True)
     settings.download_dir.mkdir(parents=True, exist_ok=True)
     for preset in settings.download_presets:
         preset.mkdir(parents=True, exist_ok=True)

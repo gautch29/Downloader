@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 import uuid
 
-from sqlalchemy import BigInteger, DateTime, Enum as SqlEnum, Float, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum as SqlEnum, Float, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -15,6 +15,8 @@ class DownloadStatus(str, Enum):
     running = "running"
     success = "success"
     failed = "failed"
+    paused = "paused"
+    canceled = "canceled"
 
 
 class DownloadJob(Base):
@@ -28,6 +30,9 @@ class DownloadJob(Base):
     bytes_downloaded: Mapped[int] = mapped_column(BigInteger, default=0)
     total_bytes: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     progress_percent: Mapped[float] = mapped_column(Float, default=0.0)
+    pause_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    stop_requested: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_hidden: Mapped[bool] = mapped_column(Boolean, default=False)
     status: Mapped[DownloadStatus] = mapped_column(SqlEnum(DownloadStatus), default=DownloadStatus.queued)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

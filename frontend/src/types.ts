@@ -1,4 +1,4 @@
-export type DownloadStatus = 'queued' | 'running' | 'success' | 'failed';
+export type DownloadStatus = 'queued' | 'running' | 'success' | 'failed' | 'paused' | 'canceled';
 
 export interface DownloadJob {
   id: string;

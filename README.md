@@ -18,6 +18,8 @@ Self-hosted app to remotely submit 1fichier movie links, download files into a P
 - Per-IP rate limit for queueing jobs
 - Safe filename sanitization and duplicate-safe output names
 - Destination folder browse/create restricted to configured roots
+- Job controls: pause, stop, remove from list, and clean completed
+- JSONL audit log (`JOB_LOG_PATH`) keeps job history after UI removal
 - CORS allow-list from env (`CORS_ORIGINS`)
 
 ## Quick start

@@ -23,6 +23,10 @@ async function api<T>(path: string, init: RequestInit = {}, token?: string): Pro
     throw new Error(text || `HTTP ${response.status}`);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -56,6 +60,18 @@ export function App() {
   const isAuthed = useMemo(() => Boolean(token), [token]);
   const activeTarget = customTargetPath || selectedPreset;
 
+  const refreshJobs = async () => {
+    if (!token) {
+      return;
+    }
+    try {
+      const list = await api<DownloadJob[]>('/downloads', { method: 'GET' }, token);
+      setJobs(list);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
   useEffect(() => {
     if (!token) {
       return;
@@ -83,17 +99,8 @@ export function App() {
       }
     };
 
-    const poll = async () => {
-      try {
-        const list = await api<DownloadJob[]>('/downloads', { method: 'GET' }, token);
-        setJobs(list);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
-      }
-    };
-
     loadInitialData();
-    const id = setInterval(poll, 5000);
+    const id = setInterval(refreshJobs, 5000);
     return () => clearInterval(id);
   }, [token]);
 
@@ -174,8 +181,55 @@ export function App() {
         token
       );
       setUrl('');
-      const list = await api<DownloadJob[]>('/downloads', { method: 'GET' }, token);
-      setJobs(list);
+      await refreshJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const pauseJob = async (jobId: string) => {
+    if (!token) {
+      return;
+    }
+    try {
+      await api<DownloadJob>(`/downloads/${jobId}/pause`, { method: 'POST' }, token);
+      await refreshJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const stopJob = async (jobId: string) => {
+    if (!token) {
+      return;
+    }
+    try {
+      await api<DownloadJob>(`/downloads/${jobId}/stop`, { method: 'POST' }, token);
+      await refreshJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const removeJob = async (jobId: string) => {
+    if (!token) {
+      return;
+    }
+    try {
+      await api<void>(`/downloads/${jobId}`, { method: 'DELETE' }, token);
+      await refreshJobs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const cleanJobs = async () => {
+    if (!token) {
+      return;
+    }
+    try {
+      await api<{ removed_count: number }>('/downloads/clean', { method: 'POST' }, token);
+      await refreshJobs();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -335,7 +389,12 @@ export function App() {
             </form>
 
             <section className="jobs">
-              <h2>Recent Jobs</h2>
+              <div className="jobs-head">
+                <h2>Recent Jobs</h2>
+                <button type="button" className="btn ghost" onClick={cleanJobs}>
+                  Clean completed
+                </button>
+              </div>
               {jobs.length === 0 && <p className="muted">No jobs yet.</p>}
               {jobs.map((job) => (
                 <article key={job.id} className={`job-card ${job.status}`}>
@@ -360,6 +419,31 @@ export function App() {
                   </div>
                   {job.saved_path && <p className="job-path">Saved: {job.saved_path}</p>}
                   {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
+                  <div className="job-actions">
+                    {job.status === 'running' && (
+                      <>
+                        <button type="button" className="btn ghost" onClick={() => pauseJob(job.id)}>
+                          Pause
+                        </button>
+                        <button type="button" className="btn ghost" onClick={() => stopJob(job.id)}>
+                          Stop
+                        </button>
+                      </>
+                    )}
+                    {job.status === 'queued' && (
+                      <>
+                        <button type="button" className="btn ghost" onClick={() => pauseJob(job.id)}>
+                          Pause
+                        </button>
+                        <button type="button" className="btn ghost" onClick={() => stopJob(job.id)}>
+                          Stop
+                        </button>
+                      </>
+                    )}
+                    <button type="button" className="btn ghost" onClick={() => removeJob(job.id)}>
+                      Remove
+                    </button>
+                  </div>
                 </article>
               ))}
             </section>

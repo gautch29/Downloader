@@ -22,6 +22,14 @@ class DownloadResult:
     total_bytes: int | None
 
 
+@dataclass
+class DownloadInterrupted(Exception):
+    reason: str
+    path: Path
+    bytes_downloaded: int
+    total_bytes: int | None
+
+
 class OneFichierClient:
     def __init__(self, api_key: str | None, api_base: str) -> None:
         self.api_key = api_key
@@ -179,6 +187,7 @@ class FileDownloader:
         name_hint: str | None = None,
         expected_total_bytes: int | None = None,
         progress_callback=None,
+        control_signal_callback=None,
     ) -> DownloadResult:
         async with httpx.AsyncClient(timeout=None, follow_redirects=True) as client:
             async with client.stream("GET", url) as response:
@@ -200,6 +209,21 @@ class FileDownloader:
                 last_callback_at = asyncio.get_event_loop().time()
                 with open(target_path, "wb") as output:
                     async for chunk in response.aiter_bytes(chunk_size=1024 * 256):
+                        signal = control_signal_callback() if control_signal_callback else None
+                        if signal == "pause":
+                            raise DownloadInterrupted(
+                                reason="paused",
+                                path=target_path,
+                                bytes_downloaded=bytes_downloaded,
+                                total_bytes=total_bytes,
+                            )
+                        if signal == "stop":
+                            raise DownloadInterrupted(
+                                reason="stopped",
+                                path=target_path,
+                                bytes_downloaded=bytes_downloaded,
+                                total_bytes=total_bytes,
+                            )
                         output.write(chunk)
                         bytes_downloaded += len(chunk)
                         now = asyncio.get_event_loop().time()

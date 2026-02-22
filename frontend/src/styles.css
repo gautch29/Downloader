@@ -244,6 +244,13 @@ select {
   font-size: 1.05rem;
 }
 
+.jobs-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .job-card {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -257,6 +264,14 @@ select {
 
 .job-card.failed {
   border-color: #d04a61;
+}
+
+.job-card.paused {
+  border-color: #c68d22;
+}
+
+.job-card.canceled {
+  border-color: #8a8f9b;
 }
 
 .job-status {
@@ -309,6 +324,13 @@ select {
 .job-error,
 .error-banner {
   color: var(--danger);
+}
+
+.job-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .muted {

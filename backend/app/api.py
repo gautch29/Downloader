@@ -1,7 +1,8 @@
 import asyncio
+from dataclasses import dataclass
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,16 +17,46 @@ from app.schemas import (
     FolderBrowseResponse,
     FolderEntry,
     FolderPresetsResponse,
+    JobsCleanResponse,
     LoginRequest,
     TokenResponse,
 )
 from app.security import enforce_login_rate_limit, enforce_rate_limit, require_admin
-from app.services.downloader import FileDownloader, OneFichierClient
+from app.services.downloader import DownloadInterrupted, FileDownloader, OneFichierClient
+from app.services.joblog import append_job_event
 from app.services.plex import PlexClient
 
 settings = get_settings()
 router = APIRouter()
 worker_lock = asyncio.Semaphore(1)
+
+TERMINAL_STATUSES = {
+    DownloadStatus.success,
+    DownloadStatus.failed,
+    DownloadStatus.paused,
+    DownloadStatus.canceled,
+}
+
+
+@dataclass
+class JobControl:
+    pause_event: asyncio.Event
+    stop_event: asyncio.Event
+
+
+job_controls: dict[str, JobControl] = {}
+
+
+def _get_job_control(job_id: str) -> JobControl:
+    control = job_controls.get(job_id)
+    if control is None:
+        control = JobControl(pause_event=asyncio.Event(), stop_event=asyncio.Event())
+        job_controls[job_id] = control
+    return control
+
+
+def _pop_job_control(job_id: str) -> None:
+    job_controls.pop(job_id, None)
 
 
 def _resolve_within_roots(path_value: str | Path, roots: list[Path]) -> Path:
@@ -52,6 +83,23 @@ def _resolve_target_dir(target_dir: str | None) -> Path:
     if not resolved.exists() or not resolved.is_dir():
         raise HTTPException(status_code=400, detail="Selected directory does not exist")
     return resolved
+
+
+def _log_job_event(job: DownloadJob, event: str, extra: dict[str, object] | None = None) -> None:
+    payload: dict[str, object] = {
+        "status": job.status.value,
+        "source_url": job.source_url,
+        "target_dir": job.target_dir,
+        "file_name": job.file_name or "",
+        "saved_path": job.saved_path or "",
+        "bytes_downloaded": job.bytes_downloaded,
+        "total_bytes": job.total_bytes if job.total_bytes is not None else 0,
+        "progress_percent": job.progress_percent,
+        "error_message": job.error_message or "",
+    }
+    if extra:
+        payload.update(extra)
+    append_job_event(settings.job_log_path, event, job.id, payload)
 
 
 @router.post("/auth/login", response_model=TokenResponse)
@@ -156,9 +204,108 @@ async def list_downloads(
     _: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ) -> list[DownloadResponse]:
-    result = await db.execute(select(DownloadJob).order_by(DownloadJob.created_at.desc()).limit(100))
+    result = await db.execute(
+        select(DownloadJob)
+        .where(DownloadJob.is_hidden.is_(False))
+        .order_by(DownloadJob.created_at.desc())
+        .limit(200)
+    )
     jobs = result.scalars().all()
     return [DownloadResponse.model_validate(job) for job in jobs]
+
+
+@router.post("/downloads/{job_id}/pause", response_model=DownloadResponse)
+async def pause_download(
+    job_id: str,
+    _: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> DownloadResponse:
+    result = await db.execute(select(DownloadJob).where(DownloadJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Download job not found")
+
+    if job.status == DownloadStatus.running:
+        control = _get_job_control(job_id)
+        control.pause_event.set()
+        job.pause_requested = True
+        job.stop_requested = False
+        _log_job_event(job, "pause_requested")
+    elif job.status == DownloadStatus.queued:
+        job.status = DownloadStatus.paused
+        job.pause_requested = False
+        job.stop_requested = False
+        job.error_message = "Paused by user"
+        _log_job_event(job, "paused")
+
+    await db.commit()
+    await db.refresh(job)
+    return DownloadResponse.model_validate(job)
+
+
+@router.post("/downloads/{job_id}/stop", response_model=DownloadResponse)
+async def stop_download(
+    job_id: str,
+    _: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> DownloadResponse:
+    result = await db.execute(select(DownloadJob).where(DownloadJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Download job not found")
+
+    if job.status == DownloadStatus.running:
+        control = _get_job_control(job_id)
+        control.stop_event.set()
+        job.stop_requested = True
+        job.pause_requested = False
+        _log_job_event(job, "stop_requested")
+    elif job.status in {DownloadStatus.queued, DownloadStatus.paused}:
+        job.status = DownloadStatus.canceled
+        job.error_message = "Stopped by user"
+        job.pause_requested = False
+        job.stop_requested = False
+        _log_job_event(job, "canceled")
+
+    await db.commit()
+    await db.refresh(job)
+    return DownloadResponse.model_validate(job)
+
+
+@router.delete("/downloads/{job_id}", status_code=204)
+async def remove_download(
+    job_id: str,
+    _: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    result = await db.execute(select(DownloadJob).where(DownloadJob.id == job_id))
+    job = result.scalar_one_or_none()
+    if not job:
+        raise HTTPException(status_code=404, detail="Download job not found")
+
+    job.is_hidden = True
+    _log_job_event(job, "removed_from_list")
+    await db.commit()
+    return Response(status_code=204)
+
+
+@router.post("/downloads/clean", response_model=JobsCleanResponse)
+async def clean_recent_jobs(
+    _: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+) -> JobsCleanResponse:
+    result = await db.execute(
+        select(DownloadJob).where(
+            DownloadJob.is_hidden.is_(False),
+            DownloadJob.status.in_(list(TERMINAL_STATUSES)),
+        )
+    )
+    jobs = result.scalars().all()
+    for job in jobs:
+        job.is_hidden = True
+        _log_job_event(job, "removed_from_list", {"reason": "clean_recent_jobs"})
+    await db.commit()
+    return JobsCleanResponse(removed_count=len(jobs))
 
 
 async def process_download_job(job_id: str) -> None:
@@ -167,12 +314,45 @@ async def process_download_job(job_id: str) -> None:
             result = await db.execute(select(DownloadJob).where(DownloadJob.id == job_id))
             job = result.scalar_one_or_none()
             if not job:
+                _pop_job_control(job_id)
+                return
+
+            control = _get_job_control(job_id)
+
+            if job.is_hidden:
+                _pop_job_control(job_id)
+                return
+
+            if job.status in TERMINAL_STATUSES:
+                _pop_job_control(job_id)
+                return
+
+            if control.stop_event.is_set() or job.stop_requested:
+                job.status = DownloadStatus.canceled
+                job.error_message = "Stopped by user"
+                job.pause_requested = False
+                job.stop_requested = False
+                _log_job_event(job, "canceled")
+                await db.commit()
+                _pop_job_control(job_id)
+                return
+
+            if control.pause_event.is_set() or job.pause_requested or job.status == DownloadStatus.paused:
+                job.status = DownloadStatus.paused
+                job.error_message = "Paused by user"
+                job.pause_requested = False
+                job.stop_requested = False
+                _log_job_event(job, "paused")
+                await db.commit()
+                _pop_job_control(job_id)
                 return
 
             job.status = DownloadStatus.running
             job.bytes_downloaded = 0
             job.total_bytes = None
             job.progress_percent = 0.0
+            job.pause_requested = False
+            job.stop_requested = False
             await db.commit()
 
             downloader = FileDownloader()
@@ -197,12 +377,20 @@ async def process_download_job(job_id: str) -> None:
                         job.progress_percent = 0.0
                     await db.commit()
 
+                def get_control_signal() -> str | None:
+                    if control.stop_event.is_set():
+                        return "stop"
+                    if control.pause_event.is_set():
+                        return "pause"
+                    return None
+
                 result = await downloader.download(
                     resolved.url,
                     destination_dir=target_dir,
                     name_hint=resolved.filename or job.source_url,
                     expected_total_bytes=resolved.expected_size,
                     progress_callback=on_progress,
+                    control_signal_callback=get_control_signal,
                 )
                 await plex.refresh_library()
 
@@ -213,8 +401,33 @@ async def process_download_job(job_id: str) -> None:
                 job.total_bytes = result.total_bytes
                 job.progress_percent = 100.0
                 job.error_message = None
+                _log_job_event(job, "completed")
+            except DownloadInterrupted as interrupted:
+                job.bytes_downloaded = interrupted.bytes_downloaded
+                job.total_bytes = interrupted.total_bytes
+                job.progress_percent = (
+                    min(100.0, (interrupted.bytes_downloaded * 100.0) / interrupted.total_bytes)
+                    if interrupted.total_bytes
+                    else 0.0
+                )
+                if interrupted.reason == "paused":
+                    job.status = DownloadStatus.paused
+                    job.saved_path = str(interrupted.path)
+                    job.file_name = interrupted.path.name
+                    job.error_message = "Paused by user"
+                    _log_job_event(job, "paused")
+                else:
+                    interrupted.path.unlink(missing_ok=True)
+                    job.status = DownloadStatus.canceled
+                    job.saved_path = None
+                    job.error_message = "Stopped by user"
+                    _log_job_event(job, "canceled")
             except Exception as exc:
                 job.status = DownloadStatus.failed
                 job.error_message = str(exc)
-
-            await db.commit()
+                _log_job_event(job, "failed", {"exception": str(exc)})
+            finally:
+                job.pause_requested = False
+                job.stop_requested = False
+                await db.commit()
+                _pop_job_control(job_id)
