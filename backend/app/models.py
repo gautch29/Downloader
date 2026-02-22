@@ -22,6 +22,7 @@ class DownloadJob(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    target_dir: Mapped[str] = mapped_column(Text, nullable=False)
     saved_path: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[DownloadStatus] = mapped_column(SqlEnum(DownloadStatus), default=DownloadStatus.queued)
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)

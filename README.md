@@ -16,6 +16,7 @@ Full-stack self-hosted app to remotely submit 1fichier movie links, download fil
 - HTTPS-only source URLs
 - Basic per-IP rate limit for queueing jobs
 - Safe filename sanitization to prevent path traversal
+- Destination folder control (presets + browse) restricted to allowed roots
 - CORS allow-list from env (`CORS_ORIGINS`)
 
 ## Quick start
@@ -40,6 +41,8 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - `PLEX_TOKEN`
 - optional: `PLEX_LIBRARY_SECTION_ID`
 - optional: `ONEFICHIER_API_KEY`
+- optional: `DOWNLOAD_PRESETS`
+- optional: `BROWSE_ROOTS`
 
 4. Point compose movie mount to your real Plex movie directory:
 

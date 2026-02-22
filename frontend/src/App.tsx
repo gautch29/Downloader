@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { DownloadJob } from './types';
+import { DownloadJob, FolderBrowseResponse, FolderEntry, FolderPresetsResponse } from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api';
 
@@ -29,12 +29,44 @@ export function App() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  const [presets, setPresets] = useState<string[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
+  const [useCustomPath, setUseCustomPath] = useState(false);
+  const [customPath, setCustomPath] = useState('');
+  const [browseCurrentPath, setBrowseCurrentPath] = useState('');
+  const [browseParentPath, setBrowseParentPath] = useState<string | null>(null);
+  const [browseDirectories, setBrowseDirectories] = useState<FolderEntry[]>([]);
+
   const isAuthed = useMemo(() => Boolean(token), [token]);
 
   useEffect(() => {
     if (!token) {
       return;
     }
+
+    const loadInitialData = async () => {
+      try {
+        const list = await api<DownloadJob[]>('/downloads', { method: 'GET' }, token);
+        setJobs(list);
+
+        const presetResponse = await api<FolderPresetsResponse>('/folders/presets', { method: 'GET' }, token);
+        setPresets(presetResponse.presets);
+        if (presetResponse.presets.length > 0) {
+          setSelectedPreset(presetResponse.presets[0]);
+        }
+
+        const browse = await api<FolderBrowseResponse>('/folders/browse', { method: 'GET' }, token);
+        setBrowseCurrentPath(browse.current_path);
+        setBrowseParentPath(browse.parent_path);
+        setBrowseDirectories(browse.directories);
+        if (!presetResponse.presets.length) {
+          setUseCustomPath(true);
+          setCustomPath(browse.current_path);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    };
 
     const poll = async () => {
       try {
@@ -45,10 +77,29 @@ export function App() {
       }
     };
 
-    poll();
+    loadInitialData();
     const id = setInterval(poll, 5000);
     return () => clearInterval(id);
   }, [token]);
+
+  const browsePath = async (path?: string) => {
+    if (!token) {
+      return;
+    }
+
+    try {
+      const query = path ? `?path=${encodeURIComponent(path)}` : '';
+      const browse = await api<FolderBrowseResponse>(`/folders/browse${query}`, { method: 'GET' }, token);
+      setBrowseCurrentPath(browse.current_path);
+      setBrowseParentPath(browse.parent_path);
+      setBrowseDirectories(browse.directories);
+      if (useCustomPath) {
+        setCustomPath(browse.current_path);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   const login = async (event: FormEvent) => {
     event.preventDefault();
@@ -75,12 +126,18 @@ export function App() {
 
     setError(null);
 
+    const targetDir = useCustomPath ? customPath.trim() : selectedPreset;
+    if (!targetDir) {
+      setError('Please select a destination folder.');
+      return;
+    }
+
     try {
       await api<DownloadJob>(
         '/downloads',
         {
           method: 'POST',
-          body: JSON.stringify({ url })
+          body: JSON.stringify({ url, target_dir: targetDir })
         },
         token
       );
@@ -96,6 +153,9 @@ export function App() {
     localStorage.removeItem('token');
     setToken(null);
     setJobs([]);
+    setPresets([]);
+    setSelectedPreset('');
+    setCustomPath('');
   };
 
   return (
@@ -104,7 +164,7 @@ export function App() {
         <header className="hero">
           <p className="eyebrow">Private automation</p>
           <h1>Plex Movie Drop</h1>
-          <p className="subtitle">Paste a 1fichier link, download straight into your movie folder, then auto-refresh Plex.</p>
+          <p className="subtitle">Paste a 1fichier link, choose destination folder, then auto-refresh Plex.</p>
         </header>
 
         {!isAuthed ? (
@@ -137,6 +197,70 @@ export function App() {
                   required
                 />
               </label>
+
+              <label>
+                Destination mode
+                <select
+                  value={useCustomPath ? 'custom' : 'preset'}
+                  onChange={(e) => setUseCustomPath(e.target.value === 'custom')}
+                >
+                  <option value="preset">Preset folder</option>
+                  <option value="custom">Browse file system</option>
+                </select>
+              </label>
+
+              {!useCustomPath ? (
+                <label>
+                  Preset folder
+                  <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}>
+                    {presets.map((preset) => (
+                      <option key={preset} value={preset}>
+                        {preset}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <div className="browser-wrap">
+                  <label>
+                    Selected folder
+                    <input value={customPath} onChange={(e) => setCustomPath(e.target.value)} />
+                  </label>
+
+                  <div className="browser-actions">
+                    <button type="button" className="ghost" onClick={() => browsePath()}>
+                      Root
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost"
+                      onClick={() => browseParentPath && browsePath(browseParentPath)}
+                      disabled={!browseParentPath}
+                    >
+                      Parent
+                    </button>
+                  </div>
+
+                  <p className="current-path">Browsing: {browseCurrentPath}</p>
+
+                  <div className="folder-grid">
+                    {browseDirectories.map((folder) => (
+                      <button
+                        key={folder.path}
+                        type="button"
+                        className="folder-item"
+                        onClick={() => {
+                          setCustomPath(folder.path);
+                          browsePath(folder.path);
+                        }}
+                      >
+                        {folder.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="actions">
                 <button type="submit">Queue Download</button>
                 <button type="button" className="ghost" onClick={logout}>
@@ -151,6 +275,7 @@ export function App() {
                 <article key={job.id} className={`job ${job.status}`}>
                   <p className="status">{job.status.toUpperCase()}</p>
                   <p className="url">{job.source_url}</p>
+                  <p className="saved">Target: {job.target_dir}</p>
                   {job.saved_path && <p className="saved">Saved: {job.saved_path}</p>}
                   {job.error_message && <p className="error">Error: {job.error_message}</p>}
                 </article>

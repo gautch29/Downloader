@@ -78,6 +78,14 @@ input {
   background: rgba(255, 255, 255, 0.84);
 }
 
+select {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.84);
+}
+
 button {
   border: 0;
   border-radius: 12px;
@@ -98,6 +106,40 @@ button.ghost {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.browser-wrap {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  display: grid;
+  gap: 10px;
+}
+
+.browser-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.current-path {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.folder-item {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ink);
+  border: 1px solid var(--line);
 }
 
 .jobs {

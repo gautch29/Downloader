@@ -17,6 +17,7 @@ class TokenResponse(BaseModel):
 
 class DownloadCreateRequest(BaseModel):
     url: str = Field(min_length=10, max_length=2048)
+    target_dir: str | None = Field(default=None, min_length=1, max_length=4096)
 
     @field_validator("url")
     @classmethod
@@ -32,6 +33,7 @@ class DownloadCreateRequest(BaseModel):
 class DownloadResponse(BaseModel):
     id: str
     source_url: str
+    target_dir: str
     saved_path: str | None
     status: DownloadStatus
     error_message: str | None
@@ -40,3 +42,18 @@ class DownloadResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FolderEntry(BaseModel):
+    name: str
+    path: str
+
+
+class FolderBrowseResponse(BaseModel):
+    current_path: str
+    parent_path: str | None
+    directories: list[FolderEntry]
+
+
+class FolderPresetsResponse(BaseModel):
+    presets: list[str]
