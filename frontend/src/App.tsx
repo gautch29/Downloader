@@ -31,13 +31,16 @@ export function App() {
 
   const [presets, setPresets] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
-  const [useCustomPath, setUseCustomPath] = useState(false);
-  const [customPath, setCustomPath] = useState('');
+  const [customTargetPath, setCustomTargetPath] = useState<string>('');
+  const [showBrowser, setShowBrowser] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+
   const [browseCurrentPath, setBrowseCurrentPath] = useState('');
   const [browseParentPath, setBrowseParentPath] = useState<string | null>(null);
   const [browseDirectories, setBrowseDirectories] = useState<FolderEntry[]>([]);
 
   const isAuthed = useMemo(() => Boolean(token), [token]);
+  const effectiveTarget = customTargetPath || selectedPreset;
 
   useEffect(() => {
     if (!token) {
@@ -46,23 +49,21 @@ export function App() {
 
     const loadInitialData = async () => {
       try {
-        const list = await api<DownloadJob[]>('/downloads', { method: 'GET' }, token);
-        setJobs(list);
+        const [list, presetResponse, browse] = await Promise.all([
+          api<DownloadJob[]>('/downloads', { method: 'GET' }, token),
+          api<FolderPresetsResponse>('/folders/presets', { method: 'GET' }, token),
+          api<FolderBrowseResponse>('/folders/browse', { method: 'GET' }, token)
+        ]);
 
-        const presetResponse = await api<FolderPresetsResponse>('/folders/presets', { method: 'GET' }, token);
+        setJobs(list);
         setPresets(presetResponse.presets);
         if (presetResponse.presets.length > 0) {
           setSelectedPreset(presetResponse.presets[0]);
         }
 
-        const browse = await api<FolderBrowseResponse>('/folders/browse', { method: 'GET' }, token);
         setBrowseCurrentPath(browse.current_path);
         setBrowseParentPath(browse.parent_path);
         setBrowseDirectories(browse.directories);
-        if (!presetResponse.presets.length) {
-          setUseCustomPath(true);
-          setCustomPath(browse.current_path);
-        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       }
@@ -93,9 +94,27 @@ export function App() {
       setBrowseCurrentPath(browse.current_path);
       setBrowseParentPath(browse.parent_path);
       setBrowseDirectories(browse.directories);
-      if (useCustomPath) {
-        setCustomPath(browse.current_path);
-      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const createFolder = async () => {
+    if (!token || !newFolderName.trim()) {
+      return;
+    }
+
+    try {
+      await api<FolderEntry>(
+        '/folders/create',
+        {
+          method: 'POST',
+          body: JSON.stringify({ parent_path: browseCurrentPath, name: newFolderName.trim() })
+        },
+        token
+      );
+      setNewFolderName('');
+      await browsePath(browseCurrentPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -126,8 +145,7 @@ export function App() {
 
     setError(null);
 
-    const targetDir = useCustomPath ? customPath.trim() : selectedPreset;
-    if (!targetDir) {
+    if (!effectiveTarget) {
       setError('Please select a destination folder.');
       return;
     }
@@ -137,7 +155,7 @@ export function App() {
         '/downloads',
         {
           method: 'POST',
-          body: JSON.stringify({ url, target_dir: targetDir })
+          body: JSON.stringify({ url, target_dir: effectiveTarget })
         },
         token
       );
@@ -155,7 +173,8 @@ export function App() {
     setJobs([]);
     setPresets([]);
     setSelectedPreset('');
-    setCustomPath('');
+    setCustomTargetPath('');
+    setShowBrowser(false);
   };
 
   return (
@@ -199,19 +218,8 @@ export function App() {
               </label>
 
               <label>
-                Destination mode
-                <select
-                  value={useCustomPath ? 'custom' : 'preset'}
-                  onChange={(e) => setUseCustomPath(e.target.value === 'custom')}
-                >
-                  <option value="preset">Preset folder</option>
-                  <option value="custom">Browse file system</option>
-                </select>
-              </label>
-
-              {!useCustomPath ? (
-                <label>
-                  Preset folder
+                Destination preset
+                <div className="destination-row">
                   <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}>
                     {presets.map((preset) => (
                       <option key={preset} value={preset}>
@@ -219,14 +227,30 @@ export function App() {
                       </option>
                     ))}
                   </select>
-                </label>
-              ) : (
-                <div className="browser-wrap">
-                  <label>
-                    Selected folder
-                    <input value={customPath} onChange={(e) => setCustomPath(e.target.value)} />
-                  </label>
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={async () => {
+                      setShowBrowser(true);
+                      await browsePath(customTargetPath || undefined);
+                    }}
+                  >
+                    Browse
+                  </button>
+                </div>
+              </label>
 
+              {customTargetPath && (
+                <div className="custom-target-row">
+                  <p className="current-path">Custom target: {customTargetPath}</p>
+                  <button type="button" className="ghost" onClick={() => setCustomTargetPath('')}>
+                    Use preset instead
+                  </button>
+                </div>
+              )}
+
+              {showBrowser && (
+                <section className="browser-wrap">
                   <div className="browser-actions">
                     <button type="button" className="ghost" onClick={() => browsePath()}>
                       Root
@@ -239,6 +263,9 @@ export function App() {
                     >
                       Parent
                     </button>
+                    <button type="button" className="ghost" onClick={() => setShowBrowser(false)}>
+                      Close
+                    </button>
                   </div>
 
                   <p className="current-path">Browsing: {browseCurrentPath}</p>
@@ -249,16 +276,36 @@ export function App() {
                         key={folder.path}
                         type="button"
                         className="folder-item"
-                        onClick={() => {
-                          setCustomPath(folder.path);
-                          browsePath(folder.path);
-                        }}
+                        onClick={() => browsePath(folder.path)}
                       >
                         {folder.name}
                       </button>
                     ))}
                   </div>
-                </div>
+
+                  <div className="browser-actions">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomTargetPath(browseCurrentPath);
+                        setShowBrowser(false);
+                      }}
+                    >
+                      Select current folder
+                    </button>
+                  </div>
+
+                  <div className="destination-row">
+                    <input
+                      placeholder="New folder name"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                    />
+                    <button type="button" className="ghost" onClick={createFolder}>
+                      Create
+                    </button>
+                  </div>
+                </section>
               )}
 
               <div className="actions">

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     jwt_exp_minutes: int = 720
     admin_username: str = "admin"
     admin_password_hash: str
+    max_login_attempts_per_15m: int = 20
 
     max_downloads_per_hour: int = 20
 

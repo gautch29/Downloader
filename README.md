@@ -11,7 +11,9 @@ Full-stack self-hosted app to remotely submit 1fichier movie links, download fil
 ## Security model (current MVP)
 
 - Single-admin login (`ADMIN_USERNAME` + bcrypt hash in env)
+- Password verification supports Argon2 and bcrypt hashes
 - JWT-protected API endpoints
+- Login brute-force throttling per IP (`MAX_LOGIN_ATTEMPTS_PER_15M`)
 - 1fichier-only URL validation
 - HTTPS-only source URLs
 - Basic per-IP rate limit for queueing jobs
@@ -43,6 +45,7 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - optional: `ONEFICHIER_API_KEY`
 - optional: `DOWNLOAD_PRESETS`
 - optional: `BROWSE_ROOTS`
+- optional: `MAX_LOGIN_ATTEMPTS_PER_15M`
 
 4. Point compose movie mount to your real Plex movie directory:
 

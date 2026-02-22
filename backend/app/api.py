@@ -12,13 +12,14 @@ from app.models import DownloadJob, DownloadStatus
 from app.schemas import (
     DownloadCreateRequest,
     DownloadResponse,
+    FolderCreateRequest,
     FolderBrowseResponse,
     FolderEntry,
     FolderPresetsResponse,
     LoginRequest,
     TokenResponse,
 )
-from app.security import enforce_rate_limit, require_admin
+from app.security import enforce_login_rate_limit, enforce_rate_limit, require_admin
 from app.services.downloader import FileDownloader, OneFichierClient
 from app.services.plex import PlexClient
 
@@ -54,7 +55,8 @@ def _resolve_target_dir(target_dir: str | None) -> Path:
 
 
 @router.post("/auth/login", response_model=TokenResponse)
-async def login(payload: LoginRequest) -> TokenResponse:
+async def login(payload: LoginRequest, request: Request) -> TokenResponse:
+    enforce_login_rate_limit(request)
     if payload.username != settings.admin_username:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -100,6 +102,24 @@ async def browse_folders(
             continue
 
     return FolderBrowseResponse(current_path=str(current), parent_path=parent_path, directories=dirs)
+
+
+@router.post("/folders/create", response_model=FolderEntry)
+async def create_folder(payload: FolderCreateRequest, _: str = Depends(require_admin)) -> FolderEntry:
+    if "/" in payload.name or "\\" in payload.name or payload.name in {".", ".."}:
+        raise HTTPException(status_code=400, detail="Invalid folder name")
+
+    parent = _resolve_within_roots(payload.parent_path, _get_allowed_roots())
+    if not parent.exists() or not parent.is_dir():
+        raise HTTPException(status_code=400, detail="Parent path is not a directory")
+
+    target = (parent / payload.name).resolve()
+    _resolve_within_roots(target, _get_allowed_roots())
+    try:
+        target.mkdir(parents=False, exist_ok=False)
+    except FileExistsError as exc:
+        raise HTTPException(status_code=409, detail="Folder already exists") from exc
+    return FolderEntry(name=target.name, path=str(target))
 
 
 @router.post("/downloads", response_model=DownloadResponse)
@@ -150,7 +170,7 @@ async def process_download_job(job_id: str) -> None:
             try:
                 target_dir = _resolve_target_dir(job.target_dir)
                 resolved_url = await onefichier.resolve_download_url(job.source_url)
-                saved = await downloader.download(resolved_url, target_dir=target_dir, name_hint=job.source_url)
+                saved = await downloader.download(resolved_url, destination_dir=target_dir, name_hint=job.source_url)
                 await plex.refresh_library()
 
                 job.status = DownloadStatus.success

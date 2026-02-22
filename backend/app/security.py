@@ -11,6 +11,7 @@ settings = get_settings()
 security = HTTPBearer(auto_error=True)
 
 rate_limiter = defaultdict(deque)
+login_limiter = defaultdict(deque)
 
 
 def require_admin(
@@ -34,5 +35,20 @@ def enforce_rate_limit(request: Request) -> None:
 
     if len(bucket) >= settings.max_downloads_per_hour:
         raise HTTPException(status_code=429, detail="Rate limit exceeded")
+
+    bucket.append(now)
+
+
+def enforce_login_rate_limit(request: Request) -> None:
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(minutes=15)
+    key = request.client.host if request.client else "unknown"
+    bucket = login_limiter[key]
+
+    while bucket and bucket[0] < window_start:
+        bucket.popleft()
+
+    if len(bucket) >= settings.max_login_attempts_per_15m:
+        raise HTTPException(status_code=429, detail="Too many login attempts")
 
     bucket.append(now)

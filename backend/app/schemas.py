@@ -57,3 +57,8 @@ class FolderBrowseResponse(BaseModel):
 
 class FolderPresetsResponse(BaseModel):
     presets: list[str]
+
+
+class FolderCreateRequest(BaseModel):
+    parent_path: str = Field(min_length=1, max_length=4096)
+    name: str = Field(min_length=1, max_length=255)

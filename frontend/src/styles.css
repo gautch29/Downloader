@@ -108,6 +108,12 @@ button.ghost {
   flex-wrap: wrap;
 }
 
+.destination-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
 .browser-wrap {
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -120,6 +126,7 @@ button.ghost {
 .browser-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .current-path {
@@ -140,6 +147,17 @@ button.ghost {
   background: rgba(255, 255, 255, 0.9);
   color: var(--ink);
   border: 1px solid var(--line);
+}
+
+.custom-target-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 10px;
 }
 
 .jobs {
