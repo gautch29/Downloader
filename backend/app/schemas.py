@@ -6,8 +6,9 @@ from app.models import DownloadStatus
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    access_key: str | None = None
+    username: str | None = None
+    password: str | None = None
 
 
 class TokenResponse(BaseModel):

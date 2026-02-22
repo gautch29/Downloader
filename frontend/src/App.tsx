@@ -4,13 +4,18 @@ import { DownloadJob, FolderBrowseResponse, FolderEntry, FolderPresetsResponse }
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000/api';
 
 async function api<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
+  const headers: Record<string, string> = {
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(init.headers as Record<string, string> | undefined)
+  };
+
+  if (init.body) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers || {})
-    }
+    headers
   });
 
   if (!response.ok) {
@@ -23,8 +28,7 @@ async function api<T>(path: string, init: RequestInit = {}, token?: string): Pro
 
 export function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('');
+  const [accessKey, setAccessKey] = useState('');
   const [url, setUrl] = useState('');
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -32,15 +36,15 @@ export function App() {
   const [presets, setPresets] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
   const [customTargetPath, setCustomTargetPath] = useState<string>('');
+
   const [showBrowser, setShowBrowser] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-
   const [browseCurrentPath, setBrowseCurrentPath] = useState('');
   const [browseParentPath, setBrowseParentPath] = useState<string | null>(null);
   const [browseDirectories, setBrowseDirectories] = useState<FolderEntry[]>([]);
 
   const isAuthed = useMemo(() => Boolean(token), [token]);
-  const effectiveTarget = customTargetPath || selectedPreset;
+  const activeTarget = customTargetPath || selectedPreset;
 
   useEffect(() => {
     if (!token) {
@@ -127,11 +131,11 @@ export function App() {
     try {
       const data = await api<{ access_token: string }>('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ access_key: accessKey })
       });
       setToken(data.access_token);
       localStorage.setItem('token', data.access_token);
-      setPassword('');
+      setAccessKey('');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -145,8 +149,8 @@ export function App() {
 
     setError(null);
 
-    if (!effectiveTarget) {
-      setError('Please select a destination folder.');
+    if (!activeTarget) {
+      setError('Select a destination folder first.');
       return;
     }
 
@@ -155,7 +159,7 @@ export function App() {
         '/downloads',
         {
           method: 'POST',
-          body: JSON.stringify({ url, target_dir: effectiveTarget })
+          body: JSON.stringify({ url, target_dir: activeTarget })
         },
         token
       );
@@ -171,43 +175,47 @@ export function App() {
     localStorage.removeItem('token');
     setToken(null);
     setJobs([]);
-    setPresets([]);
-    setSelectedPreset('');
-    setCustomTargetPath('');
     setShowBrowser(false);
+    setCustomTargetPath('');
   };
 
   return (
-    <main className="app-shell">
-      <section className="panel">
-        <header className="hero">
-          <p className="eyebrow">Private automation</p>
-          <h1>Plex Movie Drop</h1>
-          <p className="subtitle">Paste a 1fichier link, choose destination folder, then auto-refresh Plex.</p>
+    <main className="layout">
+      <section className="card">
+        <header className="topbar">
+          <div>
+            <p className="tag">Private Pipeline</p>
+            <h1>Movie Drop Console</h1>
+          </div>
+          {isAuthed && (
+            <button type="button" className="btn secondary" onClick={logout}>
+              Sign out
+            </button>
+          )}
         </header>
 
         {!isAuthed ? (
-          <form className="grid" onSubmit={login}>
+          <form className="stack" onSubmit={login}>
             <label>
-              Username
-              <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-            </label>
-            <label>
-              Password
+              Access key
               <input
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={accessKey}
+                onChange={(e) => setAccessKey(e.target.value)}
                 autoComplete="current-password"
+                placeholder="Enter admin access key"
+                required
               />
             </label>
-            <button type="submit">Sign In</button>
+            <button type="submit" className="btn primary">
+              Unlock
+            </button>
           </form>
         ) : (
-          <>
-            <form className="grid" onSubmit={submitDownload}>
+          <div className="content-grid">
+            <form className="stack" onSubmit={submitDownload}>
               <label>
-                1fichier URL
+                1fichier link
                 <input
                   type="url"
                   placeholder="https://1fichier.com/?..."
@@ -219,7 +227,7 @@ export function App() {
 
               <label>
                 Destination preset
-                <div className="destination-row">
+                <div className="row">
                   <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}>
                     {presets.map((preset) => (
                       <option key={preset} value={preset}>
@@ -229,7 +237,7 @@ export function App() {
                   </select>
                   <button
                     type="button"
-                    className="ghost"
+                    className="btn secondary"
                     onClick={async () => {
                       setShowBrowser(true);
                       await browsePath(customTargetPath || undefined);
@@ -241,94 +249,95 @@ export function App() {
               </label>
 
               {customTargetPath && (
-                <div className="custom-target-row">
-                  <p className="current-path">Custom target: {customTargetPath}</p>
-                  <button type="button" className="ghost" onClick={() => setCustomTargetPath('')}>
-                    Use preset instead
+                <div className="selected-target">
+                  <span>Custom target:</span>
+                  <code>{customTargetPath}</code>
+                  <button type="button" className="btn ghost" onClick={() => setCustomTargetPath('')}>
+                    Clear
                   </button>
                 </div>
               )}
 
               {showBrowser && (
-                <section className="browser-wrap">
-                  <div className="browser-actions">
-                    <button type="button" className="ghost" onClick={() => browsePath()}>
-                      Root
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost"
-                      onClick={() => browseParentPath && browsePath(browseParentPath)}
-                      disabled={!browseParentPath}
-                    >
-                      Parent
-                    </button>
-                    <button type="button" className="ghost" onClick={() => setShowBrowser(false)}>
-                      Close
-                    </button>
-                  </div>
-
-                  <p className="current-path">Browsing: {browseCurrentPath}</p>
-
-                  <div className="folder-grid">
-                    {browseDirectories.map((folder) => (
-                      <button
-                        key={folder.path}
-                        type="button"
-                        className="folder-item"
-                        onClick={() => browsePath(folder.path)}
-                      >
-                        {folder.name}
+                <section className="browser">
+                  <div className="browser-head">
+                    <div className="row">
+                      <button type="button" className="btn ghost" onClick={() => browsePath()}>
+                        Root
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        className="btn ghost"
+                        onClick={() => browseParentPath && browsePath(browseParentPath)}
+                        disabled={!browseParentPath}
+                      >
+                        Up
+                      </button>
+                      <button type="button" className="btn ghost" onClick={() => setShowBrowser(false)}>
+                        Close
+                      </button>
+                    </div>
+                    <code className="path">{browseCurrentPath}</code>
                   </div>
+
+                  <ul className="folder-list">
+                    {browseDirectories.map((folder) => (
+                      <li key={folder.path}>
+                        <button type="button" className="folder-row" onClick={() => browsePath(folder.path)}>
+                          <span className="folder-label">DIR</span>
+                          <span className="folder-name">{folder.name}</span>
+                          <span className="folder-path">{folder.path}</span>
+                        </button>
+                      </li>
+                    ))}
+                    {browseDirectories.length === 0 && <li className="folder-empty">No subfolders here.</li>}
+                  </ul>
 
                   <div className="browser-actions">
                     <button
                       type="button"
+                      className="btn primary"
                       onClick={() => {
                         setCustomTargetPath(browseCurrentPath);
                         setShowBrowser(false);
                       }}
                     >
-                      Select current folder
+                      Select this folder
                     </button>
                   </div>
 
-                  <div className="destination-row">
+                  <div className="row">
                     <input
-                      placeholder="New folder name"
+                      placeholder="new-folder-name"
                       value={newFolderName}
                       onChange={(e) => setNewFolderName(e.target.value)}
                     />
-                    <button type="button" className="ghost" onClick={createFolder}>
-                      Create
+                    <button type="button" className="btn secondary" onClick={createFolder}>
+                      Create folder
                     </button>
                   </div>
                 </section>
               )}
 
-              <div className="actions">
-                <button type="submit">Queue Download</button>
-                <button type="button" className="ghost" onClick={logout}>
-                  Sign Out
-                </button>
-              </div>
+              <button type="submit" className="btn primary">
+                Queue download
+              </button>
             </form>
 
-            <div className="jobs">
-              {jobs.length === 0 && <p className="empty">No jobs yet.</p>}
+            <section className="jobs">
+              <h2>Recent Jobs</h2>
+              {jobs.length === 0 && <p className="muted">No jobs yet.</p>}
               {jobs.map((job) => (
-                <article key={job.id} className={`job ${job.status}`}>
-                  <p className="status">{job.status.toUpperCase()}</p>
-                  <p className="url">{job.source_url}</p>
-                  <p className="saved">Target: {job.target_dir}</p>
-                  {job.saved_path && <p className="saved">Saved: {job.saved_path}</p>}
-                  {job.error_message && <p className="error">Error: {job.error_message}</p>}
+                <article key={job.id} className={`job-card ${job.status}`}>
+                  <p className="job-status">{job.status.toUpperCase()}</p>
+                  <p className="job-url">{job.source_url}</p>
+                  <p className="job-path">Target: {job.target_dir}</p>
+                  {job.saved_path && <p className="job-path">Saved: {job.saved_path}</p>}
+                  {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
                 </article>
               ))}
-            </div>
-          </>
+            </section>
+          </div>
         )}
 
         {error && <p className="error-banner">{error}</p>}

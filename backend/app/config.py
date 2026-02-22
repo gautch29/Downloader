@@ -15,8 +15,10 @@ class Settings(BaseSettings):
 
     jwt_secret: str
     jwt_exp_minutes: int = 720
+    auth_mode: str = "access_key"
+    admin_access_key_hash: str | None = None
     admin_username: str = "admin"
-    admin_password_hash: str
+    admin_password_hash: str = ""
     max_login_attempts_per_15m: int = 20
 
     max_downloads_per_hour: int = 20

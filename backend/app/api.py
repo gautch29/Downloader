@@ -57,10 +57,19 @@ def _resolve_target_dir(target_dir: str | None) -> Path:
 @router.post("/auth/login", response_model=TokenResponse)
 async def login(payload: LoginRequest, request: Request) -> TokenResponse:
     enforce_login_rate_limit(request)
+    if settings.auth_mode == "access_key":
+        if not settings.admin_access_key_hash:
+            raise HTTPException(status_code=500, detail="ADMIN_ACCESS_KEY_HASH is not configured")
+        if not payload.access_key:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="access_key is required")
+        if not verify_password(payload.access_key, settings.admin_access_key_hash):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        return TokenResponse(access_token=create_access_token(settings.admin_username))
+
     if payload.username != settings.admin_username:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    if not verify_password(payload.password, settings.admin_password_hash):
+    if not payload.password or not verify_password(payload.password, settings.admin_password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     return TokenResponse(access_token=create_access_token(payload.username))
