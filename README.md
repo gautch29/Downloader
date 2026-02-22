@@ -58,6 +58,7 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - `DOWNLOAD_PRESETS=["/mnt/PlexZFS4/Films seuls","/mnt/PlexZFS2/Animés","/mnt/PlexZFS2/Séries"]`
 - `BROWSE_ROOTS=["/mnt/PlexZFS4","/mnt/PlexZFS2"]`
 - Startup now validates these paths exist and are writable (it will fail fast if mounts are wrong).
+  `DOWNLOAD_DIR` must be writable; invalid/non-writable optional presets/roots are skipped.
 
 6. Start the stack:
 

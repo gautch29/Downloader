@@ -1,5 +1,12 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { DownloadJob, FolderBrowseResponse, FolderEntry, FolderPresetsResponse, StorageStatus } from './types';
+import {
+  DownloadJob,
+  DownloadStatus,
+  FolderBrowseResponse,
+  FolderEntry,
+  FolderPresetsResponse,
+  StorageStatus
+} from './types';
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
@@ -34,10 +41,46 @@ function formatBytes(bytes: number): string {
   if (bytes <= 0) {
     return '0 B';
   }
+
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
   const value = bytes / 1024 ** exponent;
   return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[exponent]}`;
+}
+
+function formatStatus(status: DownloadStatus): string {
+  return status.slice(0, 1).toUpperCase() + status.slice(1);
+}
+
+function formatTime(iso: string): string {
+  const value = new Date(iso);
+  if (Number.isNaN(value.getTime())) {
+    return iso;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(value);
+}
+
+function formatSyncTime(iso: string | null): string {
+  if (!iso) {
+    return 'Never';
+  }
+
+  const value = new Date(iso);
+  if (Number.isNaN(value.getTime())) {
+    return 'Never';
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(value);
 }
 
 export function App() {
@@ -47,6 +90,7 @@ export function App() {
   const [jobs, setJobs] = useState<DownloadJob[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [storage, setStorage] = useState<StorageStatus | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
 
   const [presets, setPresets] = useState<string[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<string>('');
@@ -67,6 +111,7 @@ export function App() {
     if (!token) {
       return;
     }
+
     try {
       const [list, storageStatus] = await Promise.all([
         api<DownloadJob[]>('/downloads', { method: 'GET' }, token),
@@ -74,6 +119,7 @@ export function App() {
       ]);
       setJobs(list);
       setStorage(storageStatus);
+      setLastSyncedAt(new Date().toISOString());
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -96,13 +142,12 @@ export function App() {
         setJobs(list);
         setStorage(storageStatus);
         setPresets(presetResponse.presets);
-        if (presetResponse.presets.length > 0) {
-          setSelectedPreset(presetResponse.presets[0]);
-        }
+        setSelectedPreset(presetResponse.presets[0] ?? '');
 
         setBrowseCurrentPath(browse.current_path);
         setBrowseParentPath(browse.parent_path);
         setBrowseDirectories(browse.directories);
+        setLastSyncedAt(new Date().toISOString());
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       }
@@ -200,6 +245,7 @@ export function App() {
     if (!token) {
       return;
     }
+
     try {
       await api<DownloadJob>(`/downloads/${jobId}/pause`, { method: 'POST' }, token);
       await refreshJobs();
@@ -212,6 +258,7 @@ export function App() {
     if (!token) {
       return;
     }
+
     try {
       await api<DownloadJob>(`/downloads/${jobId}/stop`, { method: 'POST' }, token);
       await refreshJobs();
@@ -224,6 +271,7 @@ export function App() {
     if (!token) {
       return;
     }
+
     try {
       await api<void>(`/downloads/${jobId}`, { method: 'DELETE' }, token);
       await refreshJobs();
@@ -236,6 +284,7 @@ export function App() {
     if (!token) {
       return;
     }
+
     try {
       await api<{ removed_count: number }>('/downloads/clean', { method: 'POST' }, token);
       await refreshJobs();
@@ -251,15 +300,24 @@ export function App() {
     setShowBrowser(false);
     setCustomTargetPath('');
     setStorage(null);
+    setLastSyncedAt(null);
   };
 
   const stats = useMemo(() => {
-    const running = jobs.filter((j) => j.status === 'running').length;
-    const queued = jobs.filter((j) => j.status === 'queued').length;
-    const failed = jobs.filter((j) => j.status === 'failed').length;
-    const completed = jobs.filter((j) => j.status === 'success').length;
+    const running = jobs.filter((job) => job.status === 'running').length;
+    const queued = jobs.filter((job) => job.status === 'queued').length;
+    const failed = jobs.filter((job) => job.status === 'failed').length;
+    const completed = jobs.filter((job) => job.status === 'success').length;
     return { running, queued, failed, completed };
   }, [jobs]);
+
+  const storageUsedPercent = useMemo(() => {
+    if (!storage || storage.total_bytes <= 0) {
+      return 0;
+    }
+
+    return (storage.used_bytes / storage.total_bytes) * 100;
+  }, [storage]);
 
   const filteredJobs = useMemo(() => {
     const search = jobSearch.trim().toLowerCase();
@@ -276,75 +334,97 @@ export function App() {
   }, [jobs, jobSearch]);
 
   return (
-    <main className="layout">
-      <section className="card">
-        <header className="topbar">
-          <div>
-            <p className="tag">Private Pipeline</p>
+    <main className="app">
+      <section className="shell">
+        <header className="masthead">
+          <div className="masthead-copy">
+            <p className="eyebrow">Private Pipeline</p>
             <h1>Movie Drop Console</h1>
+            <p className="lead">Queue secure 1fichier downloads, route them to the right library folder, and monitor progress live.</p>
           </div>
+
           {isAuthed && (
-            <button type="button" className="btn secondary" onClick={logout}>
-              Sign out
-            </button>
+            <div className="masthead-actions">
+              <p className="sync-pill">Updated {formatSyncTime(lastSyncedAt)}</p>
+              <button type="button" className="button button-ghost" onClick={logout}>
+                Sign out
+              </button>
+            </div>
           )}
         </header>
 
         {!isAuthed ? (
-          <form className="stack auth" onSubmit={login}>
-            <label>
-              Access key
-              <input
-                type="password"
-                value={accessKey}
-                onChange={(e) => setAccessKey(e.target.value)}
-                autoComplete="current-password"
-                placeholder="Enter admin access key"
-                required
-              />
-            </label>
-            <button type="submit" className="btn primary">
-              Unlock
-            </button>
-          </form>
+          <section className="auth-wrap">
+            <form className="auth-card" onSubmit={login}>
+              <h2>Unlock Workspace</h2>
+              <p>Use your private access key to start remote downloads.</p>
+              <label className="field">
+                <span>Access key</span>
+                <input
+                  type="password"
+                  value={accessKey}
+                  onChange={(event) => setAccessKey(event.target.value)}
+                  autoComplete="current-password"
+                  placeholder="Enter access key"
+                  required
+                />
+              </label>
+              <button type="submit" className="button button-primary button-wide">
+                Unlock
+              </button>
+            </form>
+          </section>
         ) : (
           <>
-            <section className="metrics-row">
+            <section className="metrics-grid">
               <article className="metric-card">
-                <p>Running</p>
-                <strong>{stats.running}</strong>
+                <p className="metric-label">Running</p>
+                <p className="metric-value">{stats.running}</p>
               </article>
               <article className="metric-card">
-                <p>Queued</p>
-                <strong>{stats.queued}</strong>
+                <p className="metric-label">Queued</p>
+                <p className="metric-value">{stats.queued}</p>
               </article>
               <article className="metric-card">
-                <p>Failed</p>
-                <strong>{stats.failed}</strong>
+                <p className="metric-label">Completed</p>
+                <p className="metric-value">{stats.completed}</p>
               </article>
               <article className="metric-card">
-                <p>Storage Free</p>
-                <strong>{storage ? formatBytes(storage.free_bytes) : '...'}</strong>
+                <p className="metric-label">Failed</p>
+                <p className="metric-value">{stats.failed}</p>
+              </article>
+              <article className="metric-card storage-card">
+                <p className="metric-label">Storage Free</p>
+                <p className="metric-value">{storage ? formatBytes(storage.free_bytes) : '...'}</p>
+                <div className="meter">
+                  <span className="meter-fill" style={{ width: `${Math.min(100, Math.max(0, storageUsedPercent))}%` }} />
+                </div>
               </article>
             </section>
 
-            <div className="content-grid">
-              <form className="stack surface" onSubmit={submitDownload}>
-                <label>
-                  1fichier link
+            <section className="workflow-grid">
+              <form className="panel" onSubmit={submitDownload}>
+                <header className="panel-head">
+                  <h2>New Download</h2>
+                  <p className="panel-sub">Destination: {activeTarget || 'Select a folder'}</p>
+                </header>
+
+                <label className="field">
+                  <span>1fichier link</span>
                   <input
                     type="url"
                     placeholder="https://1fichier.com/?..."
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
+                    onChange={(event) => setUrl(event.target.value)}
                     required
                   />
                 </label>
 
-                <label>
-                  Destination preset
-                  <div className="row">
-                    <select value={selectedPreset} onChange={(e) => setSelectedPreset(e.target.value)}>
+                <label className="field">
+                  <span>Destination preset</span>
+                  <div className="split-row">
+                    <select value={selectedPreset} onChange={(event) => setSelectedPreset(event.target.value)}>
+                      {presets.length === 0 && <option value="">No preset available</option>}
                       {presets.map((preset) => (
                         <option key={preset} value={preset}>
                           {preset}
@@ -353,7 +433,7 @@ export function App() {
                     </select>
                     <button
                       type="button"
-                      className="btn secondary"
+                      className="button button-ghost"
                       onClick={async () => {
                         setShowBrowser(true);
                         await browsePath(customTargetPath || undefined);
@@ -365,54 +445,62 @@ export function App() {
                 </label>
 
                 {customTargetPath && (
-                  <div className="selected-target">
-                    <span>Custom target:</span>
+                  <div className="target-pill">
+                    <span>Custom folder</span>
                     <code>{customTargetPath}</code>
-                    <button type="button" className="btn ghost" onClick={() => setCustomTargetPath('')}>
+                    <button type="button" className="button button-clear" onClick={() => setCustomTargetPath('')}>
                       Clear
                     </button>
                   </div>
                 )}
 
                 {showBrowser && (
-                  <section className="browser">
-                    <div className="browser-head">
-                      <div className="row">
-                        <button type="button" className="btn ghost" onClick={() => browsePath()}>
+                  <section className="browser-shell">
+                    <header className="browser-head">
+                      <p>Folder Browser</p>
+                      <div className="browser-controls">
+                        <button type="button" className="button button-clear" onClick={() => browsePath()}>
                           Root
                         </button>
                         <button
                           type="button"
-                          className="btn ghost"
+                          className="button button-clear"
                           onClick={() => browseParentPath && browsePath(browseParentPath)}
                           disabled={!browseParentPath}
                         >
                           Up
                         </button>
-                        <button type="button" className="btn ghost" onClick={() => setShowBrowser(false)}>
+                        <button type="button" className="button button-clear" onClick={() => setShowBrowser(false)}>
                           Close
                         </button>
                       </div>
-                      <code className="path">{browseCurrentPath}</code>
-                    </div>
+                    </header>
+
+                    <p className="browser-path">{browseCurrentPath}</p>
 
                     <ul className="folder-list">
                       {browseDirectories.map((folder) => (
                         <li key={folder.path}>
                           <button type="button" className="folder-row" onClick={() => browsePath(folder.path)}>
-                            <span className="folder-label">DIR</span>
-                            <span className="folder-name">{folder.name}</span>
-                            <span className="folder-path">{folder.path}</span>
+                            <span className="folder-icon" aria-hidden>
+                              <svg viewBox="0 0 20 20" focusable="false">
+                                <path d="M2 5.5a2 2 0 0 1 2-2h4l1.2 1.4h6.8a2 2 0 0 1 2 2v6.8a2.2 2.2 0 0 1-2.2 2.2H4.2A2.2 2.2 0 0 1 2 13.7V5.5Z" />
+                              </svg>
+                            </span>
+                            <span className="folder-copy">
+                              <strong>{folder.name}</strong>
+                              <small>{folder.path}</small>
+                            </span>
                           </button>
                         </li>
                       ))}
-                      {browseDirectories.length === 0 && <li className="folder-empty">No subfolders here.</li>}
+                      {browseDirectories.length === 0 && <li className="folder-empty">No subfolders in this path.</li>}
                     </ul>
 
-                    <div className="browser-actions">
+                    <div className="browser-footer">
                       <button
                         type="button"
-                        className="btn primary"
+                        className="button button-primary"
                         onClick={() => {
                           setCustomTargetPath(browseCurrentPath);
                           setShowBrowser(false);
@@ -422,83 +510,102 @@ export function App() {
                       </button>
                     </div>
 
-                    <div className="row">
+                    <div className="split-row">
                       <input
                         placeholder="new-folder-name"
                         value={newFolderName}
-                        onChange={(e) => setNewFolderName(e.target.value)}
+                        onChange={(event) => setNewFolderName(event.target.value)}
                       />
-                      <button type="button" className="btn secondary" onClick={createFolder}>
-                        Create folder
+                      <button type="button" className="button button-secondary" onClick={createFolder}>
+                        Create
                       </button>
                     </div>
                   </section>
                 )}
 
-                <button type="submit" className="btn primary large">
+                <button type="submit" className="button button-primary button-wide">
                   Queue download
                 </button>
               </form>
 
-              <section className="jobs surface">
-                <div className="jobs-head">
-                  <h2>Recent Jobs</h2>
-                  <button type="button" className="btn ghost" onClick={cleanJobs}>
+              <section className="panel jobs-panel">
+                <header className="panel-head panel-head-space">
+                  <div>
+                    <h2>Recent Jobs</h2>
+                    <p className="panel-sub">{filteredJobs.length} visible</p>
+                  </div>
+                  <button type="button" className="button button-ghost" onClick={cleanJobs}>
                     Clean completed
                   </button>
-                </div>
+                </header>
 
-                <div className="toolbar">
+                <label className="field search-field">
+                  <span className="sr-only">Search jobs</span>
                   <input
-                    placeholder="Search file, target, link"
+                    placeholder="Search file name, target folder, or link"
                     value={jobSearch}
-                    onChange={(e) => setJobSearch(e.target.value)}
+                    onChange={(event) => setJobSearch(event.target.value)}
                   />
-                </div>
+                </label>
 
-                {filteredJobs.length === 0 && <p className="muted">No jobs yet.</p>}
-                {filteredJobs.map((job) => (
-                  <article key={job.id} className={`job-card ${job.status}`}>
-                    <p className="job-status">{job.status.toUpperCase()}</p>
-                    {job.file_name && <p className="job-file">{job.file_name}</p>}
-                    <p className="job-url">{job.source_url}</p>
-                    <p className="job-path">Target: {job.target_dir}</p>
-                    <div className="progress-wrap">
-                      <div className="progress-meta">
-                        <span>{job.total_bytes ? `${job.progress_percent.toFixed(1)}%` : 'Streaming...'}</span>
-                        <span>
-                          {formatBytes(job.bytes_downloaded)}
-                          {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
-                        </span>
-                      </div>
-                      <div className="progress-bar">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
-                        />
-                      </div>
+                <div className="jobs-list">
+                  {filteredJobs.length === 0 && (
+                    <div className="empty-state">
+                      <p>No jobs yet.</p>
+                      <span>Queue a link to start your first download.</span>
                     </div>
-                    {job.saved_path && <p className="job-path">Saved: {job.saved_path}</p>}
-                    {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
-                    <div className="job-actions">
-                      {(job.status === 'running' || job.status === 'queued') && (
-                        <>
-                          <button type="button" className="btn ghost" onClick={() => pauseJob(job.id)}>
-                            Pause
-                          </button>
-                          <button type="button" className="btn ghost" onClick={() => stopJob(job.id)}>
-                            Stop
-                          </button>
-                        </>
-                      )}
-                      <button type="button" className="btn ghost" onClick={() => removeJob(job.id)}>
-                        Remove
-                      </button>
-                    </div>
-                  </article>
-                ))}
+                  )}
+
+                  {filteredJobs.map((job) => (
+                    <article key={job.id} className={`job-card status-${job.status}`}>
+                      <header className="job-top">
+                        <p className="status-pill">{formatStatus(job.status)}</p>
+                        <p className="job-time">{formatTime(job.updated_at)}</p>
+                      </header>
+
+                      {job.file_name && <p className="job-title">{job.file_name}</p>}
+                      <p className="job-link">{job.source_url}</p>
+                      <p className="job-target">Target: {job.target_dir}</p>
+
+                      <div className="progress-wrap">
+                        <div className="progress-meta">
+                          <span>{job.total_bytes ? `${job.progress_percent.toFixed(1)}%` : 'Streaming'}</span>
+                          <span>
+                            {formatBytes(job.bytes_downloaded)}
+                            {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
+                          </span>
+                        </div>
+                        <div className="progress-track">
+                          <div
+                            className="progress-value"
+                            style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {job.saved_path && <p className="job-target">Saved: {job.saved_path}</p>}
+                      {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
+
+                      <div className="job-actions">
+                        {(job.status === 'running' || job.status === 'queued') && (
+                          <>
+                            <button type="button" className="button button-clear" onClick={() => pauseJob(job.id)}>
+                              Pause
+                            </button>
+                            <button type="button" className="button button-clear" onClick={() => stopJob(job.id)}>
+                              Stop
+                            </button>
+                          </>
+                        )}
+                        <button type="button" className="button button-clear" onClick={() => removeJob(job.id)}>
+                          Remove
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
               </section>
-            </div>
+            </section>
           </>
         )}
 
