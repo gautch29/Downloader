@@ -48,16 +48,35 @@ def get_settings() -> Settings:
     settings.job_log_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Never auto-create download paths: this can hide bad mounts and fill container FS.
-    all_paths = [settings.download_dir, *settings.download_presets, *settings.browse_roots]
-    checked: set[str] = set()
-    for path in all_paths:
-        key = str(path)
-        if key in checked:
+    resolved_download_dir = settings.download_dir.resolve()
+    if not resolved_download_dir.exists() or not resolved_download_dir.is_dir():
+        raise ValueError(f"DOWNLOAD_DIR does not exist or is not a directory: {resolved_download_dir}")
+    if not os.access(resolved_download_dir, os.W_OK | os.X_OK):
+        raise ValueError(f"DOWNLOAD_DIR is not writable: {resolved_download_dir}")
+
+    valid_roots: list[Path] = []
+    seen_roots: set[str] = set()
+    for root in settings.browse_roots:
+        resolved = root.resolve()
+        key = str(resolved)
+        if key in seen_roots:
             continue
-        checked.add(key)
-        resolved = path.resolve()
-        if not resolved.exists() or not resolved.is_dir():
-            raise ValueError(f"Configured download path does not exist or is not a directory: {resolved}")
-        if not os.access(resolved, os.W_OK | os.X_OK):
-            raise ValueError(f"Configured download path is not writable: {resolved}")
+        seen_roots.add(key)
+        if resolved.exists() and resolved.is_dir() and os.access(resolved, os.R_OK | os.X_OK):
+            valid_roots.append(resolved)
+    settings.browse_roots = valid_roots or [resolved_download_dir]
+
+    valid_presets: list[Path] = []
+    seen_presets: set[str] = set()
+    for preset in settings.download_presets:
+        resolved = preset.resolve()
+        key = str(resolved)
+        if key in seen_presets:
+            continue
+        seen_presets.add(key)
+        if resolved.exists() and resolved.is_dir() and os.access(resolved, os.W_OK | os.X_OK):
+            valid_presets.append(resolved)
+    settings.download_presets = valid_presets or [resolved_download_dir]
+
+    settings.download_dir = resolved_download_dir
     return settings

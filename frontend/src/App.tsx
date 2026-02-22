@@ -3,8 +3,6 @@ import { DownloadJob, FolderBrowseResponse, FolderEntry, FolderPresetsResponse, 
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
 
-type JobFilter = 'all' | DownloadJob['status'];
-
 async function api<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   const headers: Record<string, string> = {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -60,7 +58,6 @@ export function App() {
   const [browseParentPath, setBrowseParentPath] = useState<string | null>(null);
   const [browseDirectories, setBrowseDirectories] = useState<FolderEntry[]>([]);
 
-  const [jobFilter, setJobFilter] = useState<JobFilter>('all');
   const [jobSearch, setJobSearch] = useState('');
 
   const isAuthed = useMemo(() => Boolean(token), [token]);
@@ -267,9 +264,6 @@ export function App() {
   const filteredJobs = useMemo(() => {
     const search = jobSearch.trim().toLowerCase();
     return jobs.filter((job) => {
-      if (jobFilter !== 'all' && job.status !== jobFilter) {
-        return false;
-      }
       if (!search) {
         return true;
       }
@@ -279,7 +273,7 @@ export function App() {
         job.target_dir.toLowerCase().includes(search)
       );
     });
-  }, [jobs, jobFilter, jobSearch]);
+  }, [jobs, jobSearch]);
 
   return (
     <main className="layout">
@@ -460,21 +454,9 @@ export function App() {
                     value={jobSearch}
                     onChange={(e) => setJobSearch(e.target.value)}
                   />
-                  <div className="segmented">
-                    {(['all', 'running', 'queued', 'success', 'failed', 'paused', 'canceled'] as JobFilter[]).map((f) => (
-                      <button
-                        key={f}
-                        type="button"
-                        className={`segmented-btn ${jobFilter === f ? 'active' : ''}`}
-                        onClick={() => setJobFilter(f)}
-                      >
-                        {f}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
-                {filteredJobs.length === 0 && <p className="muted">No jobs for current filter.</p>}
+                {filteredJobs.length === 0 && <p className="muted">No jobs yet.</p>}
                 {filteredJobs.map((job) => (
                   <article key={job.id} className={`job-card ${job.status}`}>
                     <p className="job-status">{job.status.toUpperCase()}</p>
