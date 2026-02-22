@@ -74,6 +74,12 @@ interface UiNotice {
   message: string;
 }
 
+interface JobTelemetry {
+  bytes: number;
+  timestampMs: number;
+  speedBps: number | null;
+}
+
 function formatTime(iso: string): string {
   const value = new Date(iso);
   if (Number.isNaN(value.getTime())) {
@@ -105,6 +111,35 @@ function formatSyncTime(iso: string | null): string {
   }).format(value);
 }
 
+function formatSpeed(bytesPerSecond: number | null): string {
+  if (!bytesPerSecond || bytesPerSecond <= 0) {
+    return '—';
+  }
+  return `${formatBytes(bytesPerSecond)}/s`;
+}
+
+function formatEta(seconds: number | null): string {
+  if (!seconds || !Number.isFinite(seconds) || seconds <= 0) {
+    return '—';
+  }
+
+  const rounded = Math.round(seconds);
+  if (rounded < 60) {
+    return `${rounded}s`;
+  }
+  if (rounded < 3600) {
+    return `${Math.floor(rounded / 60)}m`;
+  }
+  if (rounded < 86400) {
+    const hours = Math.floor(rounded / 3600);
+    const minutes = Math.round((rounded % 3600) / 60);
+    return `${hours}h ${minutes}m`;
+  }
+  const days = Math.floor(rounded / 86400);
+  const hours = Math.round((rounded % 86400) / 3600);
+  return `${days}d ${hours}h`;
+}
+
 export function App() {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [accessKey, setAccessKey] = useState('');
@@ -126,6 +161,7 @@ export function App() {
 
   const [jobSearch, setJobSearch] = useState('');
   const [notices, setNotices] = useState<UiNotice[]>([]);
+  const [jobTelemetry, setJobTelemetry] = useState<Record<string, JobTelemetry>>({});
   const scanNoticeIdsRef = useRef<Set<string>>(new Set());
 
   const isAuthed = useMemo(() => Boolean(token), [token]);
@@ -232,6 +268,42 @@ export function App() {
         pushNotice('warning', `Download completed but Plex scan failed for "${fileLabel}".${details}`);
       }
     }
+  }, [jobs]);
+
+  useEffect(() => {
+    setJobTelemetry((previous) => {
+      const next: Record<string, JobTelemetry> = {};
+      const fallbackNow = Date.now();
+
+      for (const job of jobs) {
+        const parsed = new Date(job.updated_at).getTime();
+        const timestampMs = Number.isNaN(parsed) ? fallbackNow : parsed;
+        const prior = previous[job.id];
+        let speedBps = prior?.speedBps ?? null;
+
+        if (job.status === 'running' && prior) {
+          const deltaBytes = job.bytes_downloaded - prior.bytes;
+          const deltaSeconds = (timestampMs - prior.timestampMs) / 1000;
+
+          if (deltaBytes > 0 && deltaSeconds > 0.2) {
+            const instantaneous = deltaBytes / deltaSeconds;
+            speedBps = speedBps ? speedBps * 0.7 + instantaneous * 0.3 : instantaneous;
+          } else if (deltaSeconds > 5 && deltaBytes <= 0 && speedBps) {
+            speedBps *= 0.65;
+          }
+        } else if (job.status !== 'running') {
+          speedBps = null;
+        }
+
+        next[job.id] = {
+          bytes: job.bytes_downloaded,
+          timestampMs,
+          speedBps
+        };
+      }
+
+      return next;
+    });
   }, [jobs]);
 
   const browsePath = async (path?: string) => {
@@ -380,6 +452,7 @@ export function App() {
     setStorage(null);
     setLastSyncedAt(null);
     setNotices([]);
+    setJobTelemetry({});
     scanNoticeIdsRef.current.clear();
   };
 
@@ -658,76 +731,91 @@ export function App() {
                     </div>
                   )}
 
-                  {filteredJobs.map((job) => (
-                    <article key={job.id} className={`job-card status-${job.status}`}>
-                      <header className="job-top">
-                        <p className="status-pill">{formatStatus(job.status)}</p>
-                        <p className="job-time">{formatTime(job.updated_at)}</p>
-                      </header>
+                  {filteredJobs.map((job) => {
+                    const telemetry = jobTelemetry[job.id];
+                    const speedBps = job.status === 'running' ? telemetry?.speedBps ?? null : null;
+                    const remainingBytes =
+                      typeof job.total_bytes === 'number' ? Math.max(0, job.total_bytes - job.bytes_downloaded) : null;
+                    const etaSeconds =
+                      job.status === 'running' && remainingBytes !== null && speedBps && speedBps > 0
+                        ? remainingBytes / speedBps
+                        : null;
 
-                      {job.file_name && (
-                        <p className="job-title" title={job.file_name}>
-                          {job.file_name}
-                        </p>
-                      )}
-                      {presetByPath.get(job.target_dir)?.label && (
-                        <p className="job-destination">Preset: {presetByPath.get(job.target_dir)?.label}</p>
-                      )}
+                    return (
+                      <article key={job.id} className={`job-card status-${job.status}`}>
+                        <header className="job-top">
+                          <p className="status-pill">{formatStatus(job.status)}</p>
+                          <p className="job-time">{formatTime(job.updated_at)}</p>
+                        </header>
 
-                      <div className="progress-wrap">
-                        <div className="progress-meta">
-                          <span>{job.total_bytes ? `${job.progress_percent.toFixed(1)}%` : 'Streaming'}</span>
-                          <span>
-                            {formatBytes(job.bytes_downloaded)}
-                            {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
-                          </span>
-                        </div>
-                        <div className={`progress-track status-${job.status}`}>
-                          <div
-                            className="progress-value"
-                            style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <p className={`plex-scan-pill scan-${job.plex_scan_status}`}>{getPlexScanSummary(job)}</p>
-                      {job.plex_scan_message && <p className="plex-scan-note">{job.plex_scan_message}</p>}
-                      {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
-
-                      <details className="job-details">
-                        <summary>Show details</summary>
-                        <div className="job-details-body">
-                          <p className="job-target" title={job.source_url}>
-                            Link: {job.source_url}
+                        {job.file_name && (
+                          <p className="job-title" title={job.file_name}>
+                            {job.file_name}
                           </p>
-                          <p className="job-target" title={job.target_dir}>
-                            Target: {job.target_dir}
-                          </p>
-                          {job.saved_path && (
-                            <p className="job-target saved-path" title={job.saved_path}>
-                              Saved: {job.saved_path}
-                            </p>
-                          )}
-                        </div>
-                      </details>
-
-                      <div className="job-actions">
-                        {(job.status === 'running' || job.status === 'queued') && (
-                          <>
-                            <button type="button" className="button button-clear" onClick={() => pauseJob(job.id)}>
-                              Pause
-                            </button>
-                            <button type="button" className="button button-clear" onClick={() => stopJob(job.id)}>
-                              Stop
-                            </button>
-                          </>
                         )}
-                        <button type="button" className="button button-clear" onClick={() => removeJob(job.id)}>
-                          Remove
-                        </button>
-                      </div>
-                    </article>
-                  ))}
+                        {presetByPath.get(job.target_dir)?.label && (
+                          <p className="job-destination">Preset: {presetByPath.get(job.target_dir)?.label}</p>
+                        )}
+
+                        <div className="progress-wrap">
+                          <div className="progress-meta">
+                            <span>{job.total_bytes ? `${job.progress_percent.toFixed(1)}%` : 'Streaming'}</span>
+                            <span>
+                              {formatBytes(job.bytes_downloaded)}
+                              {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
+                            </span>
+                          </div>
+                          <div className={`progress-track status-${job.status}`}>
+                            <div
+                              className="progress-value"
+                              style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
+                            />
+                          </div>
+                          <div className="progress-submeta">
+                            <span>Speed: {formatSpeed(speedBps)}</span>
+                            <span>ETA: {formatEta(etaSeconds)}</span>
+                          </div>
+                        </div>
+
+                        <p className={`plex-scan-pill scan-${job.plex_scan_status}`}>{getPlexScanSummary(job)}</p>
+                        {job.plex_scan_message && <p className="plex-scan-note">{job.plex_scan_message}</p>}
+                        {job.error_message && <p className="job-error">Error: {job.error_message}</p>}
+
+                        <details className="job-details">
+                          <summary>Show details</summary>
+                          <div className="job-details-body">
+                            <p className="job-target" title={job.source_url}>
+                              Link: {job.source_url}
+                            </p>
+                            <p className="job-target" title={job.target_dir}>
+                              Target: {job.target_dir}
+                            </p>
+                            {job.saved_path && (
+                              <p className="job-target saved-path" title={job.saved_path}>
+                                Saved: {job.saved_path}
+                              </p>
+                            )}
+                          </div>
+                        </details>
+
+                        <div className="job-actions">
+                          {(job.status === 'running' || job.status === 'queued') && (
+                            <>
+                              <button type="button" className="button button-clear" onClick={() => pauseJob(job.id)}>
+                                Pause
+                              </button>
+                              <button type="button" className="button button-clear" onClick={() => stopJob(job.id)}>
+                                Stop
+                              </button>
+                            </>
+                          )}
+                          <button type="button" className="button button-clear" onClick={() => removeJob(job.id)}>
+                            Remove
+                          </button>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
               </section>
             </section>

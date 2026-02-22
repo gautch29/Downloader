@@ -1,24 +1,24 @@
 :root {
   color-scheme: light;
-  --ink: #0d1a33;
-  --muted: #56647f;
-  --line: rgba(130, 149, 184, 0.28);
-  --line-strong: rgba(104, 128, 168, 0.42);
-  --shell: rgba(255, 255, 255, 0.76);
-  --panel: rgba(255, 255, 255, 0.9);
-  --panel-soft: rgba(251, 253, 255, 0.82);
+  --ink: #101a31;
+  --muted: #5d6c88;
+  --line: rgba(127, 149, 189, 0.2);
+  --line-strong: rgba(113, 136, 179, 0.34);
+  --shell: rgba(255, 255, 255, 0.74);
+  --panel: rgba(255, 255, 255, 0.92);
+  --panel-soft: rgba(252, 254, 255, 0.84);
   --primary: #0a84ff;
-  --primary-deep: #0067d6;
+  --primary-deep: #0062d1;
   --danger: #d44469;
   --success: #2f8f79;
   --warning: #b77b19;
   --idle: #6b778f;
-  --radius-xl: 30px;
-  --radius-lg: 22px;
+  --radius-xl: 34px;
+  --radius-lg: 24px;
   --radius-md: 16px;
   --radius-sm: 12px;
-  --shadow-soft: 0 18px 56px rgba(22, 37, 70, 0.14);
-  --shadow-panel: 0 10px 30px rgba(27, 41, 76, 0.08);
+  --shadow-soft: 0 30px 80px rgba(17, 31, 62, 0.16);
+  --shadow-panel: 0 14px 42px rgba(23, 40, 74, 0.11);
 }
 
 * {
@@ -36,9 +36,9 @@ body {
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
   background:
-    radial-gradient(720px 540px at -8% -12%, rgba(255, 219, 184, 0.52), transparent 58%),
-    radial-gradient(760px 460px at 112% 112%, rgba(176, 225, 250, 0.42), transparent 62%),
-    linear-gradient(160deg, #eaf0f8 0%, #f4f7fc 42%, #e5edf7 100%);
+    radial-gradient(880px 620px at -8% -14%, rgba(255, 218, 186, 0.54), transparent 60%),
+    radial-gradient(920px 560px at 112% 112%, rgba(166, 217, 250, 0.44), transparent 62%),
+    linear-gradient(160deg, #e8eef7 0%, #f5f8fd 45%, #e3ebf6 100%);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -51,12 +51,13 @@ body {
 .shell {
   width: min(1280px, 100%);
   margin: 0 auto;
-  padding: clamp(16px, 2.2vw, 28px);
+  padding: clamp(18px, 2.4vw, 30px);
   border-radius: var(--radius-xl);
-  border: 1px solid var(--line-strong);
-  background: var(--shell);
-  backdrop-filter: blur(26px) saturate(160%);
-  box-shadow: 0 20px 70px rgba(22, 37, 70, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.73), rgba(245, 250, 255, 0.62));
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255, 255, 255, 0.75);
   animation: shellIn 540ms cubic-bezier(0.2, 0.72, 0.15, 1) both;
 }
 
@@ -190,15 +191,17 @@ h1 {
   margin-top: 22px;
   display: grid;
   grid-template-columns: repeat(5, minmax(120px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .metric-card {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.75);
   border-radius: var(--radius-md);
   padding: 11px 13px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 250, 255, 0.9));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 250, 255, 0.82));
+  box-shadow:
+    0 8px 24px rgba(27, 45, 82, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
   animation: riseIn 440ms cubic-bezier(0.25, 0.8, 0.24, 1) both;
 }
 
@@ -266,11 +269,11 @@ h1 {
 }
 
 .panel {
-  border: 1px solid var(--line-strong);
+  border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--panel), var(--panel-soft));
   box-shadow: var(--shadow-panel);
-  padding: 16px;
+  padding: 18px;
   display: grid;
   gap: 12px;
   align-items: start;
@@ -339,20 +342,20 @@ h1 {
 
 .field > span {
   font-size: 0.89rem;
-  color: #334766;
+  color: #304562;
   font-weight: 560;
 }
 
 input,
 select {
   width: 100%;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(144, 165, 202, 0.36);
   border-radius: var(--radius-sm);
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(252, 254, 255, 0.92);
   color: var(--ink);
   font-size: 0.97rem;
-  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease, transform 120ms ease;
   min-height: 48px;
 }
 
@@ -363,9 +366,10 @@ input::placeholder {
 input:focus,
 select:focus {
   outline: 0;
-  border-color: rgba(66, 133, 222, 0.68);
-  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.14);
+  border-color: rgba(66, 133, 222, 0.52);
+  box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.16);
   background: #fff;
+  transform: translateY(-1px);
 }
 
 .split-row {
@@ -379,14 +383,14 @@ select:focus {
 }
 
 .button {
-  border: 1px solid transparent;
-  border-radius: 12px;
+  border: 1px solid rgba(138, 161, 202, 0.34);
+  border-radius: 14px;
   padding: 10px 14px;
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   cursor: pointer;
-  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease, background-color 120ms ease;
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease, background-color 120ms ease, border-color 120ms ease;
   white-space: nowrap;
   min-height: 42px;
 }
@@ -407,8 +411,9 @@ select:focus {
 
 .button-primary {
   color: #fff;
-  background: linear-gradient(180deg, #2f95ff 0%, var(--primary) 55%, var(--primary-deep) 100%);
-  box-shadow: 0 10px 22px rgba(10, 132, 255, 0.28);
+  border-color: rgba(8, 110, 223, 0.7);
+  background: linear-gradient(180deg, #42a2ff 0%, var(--primary) 56%, var(--primary-deep) 100%);
+  box-shadow: 0 12px 24px rgba(10, 132, 255, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .button-primary:hover {
@@ -417,14 +422,14 @@ select:focus {
 
 .button-secondary {
   color: #21426e;
-  border-color: rgba(145, 170, 207, 0.6);
-  background: rgba(242, 247, 255, 0.98);
+  border-color: rgba(146, 172, 212, 0.45);
+  background: linear-gradient(180deg, rgba(247, 251, 255, 0.96), rgba(237, 245, 255, 0.88));
 }
 
 .button-ghost {
   color: #1f3f6b;
-  border-color: var(--line);
-  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(146, 171, 209, 0.36);
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .button-clear {
@@ -468,9 +473,9 @@ select:focus {
 }
 
 .browser-shell {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(150, 173, 210, 0.34);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.66);
+  background: rgba(255, 255, 255, 0.72);
   padding: 10px;
   display: grid;
   gap: 10px;
@@ -602,7 +607,7 @@ select:focus {
   display: grid;
   gap: 10px;
   align-content: start;
-  max-height: 650px;
+  max-height: 670px;
   overflow: auto;
   padding-right: 2px;
 }
@@ -631,12 +636,12 @@ select:focus {
 
 .job-card {
   position: relative;
-  border: 1px solid var(--line);
-  border-left: 4px solid #a3b3cc;
+  border: 1px solid rgba(150, 173, 211, 0.35);
+  border-left: 3px solid #a3b3cc;
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.92);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(248, 251, 255, 0.86));
   padding: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 20px rgba(25, 44, 81, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92);
   display: grid;
   gap: 7px;
   animation: riseIn 280ms cubic-bezier(0.25, 0.8, 0.24, 1) both;
@@ -761,6 +766,14 @@ select:focus {
   color: #617495;
 }
 
+.progress-submeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.79rem;
+  color: #7385a4;
+}
+
 .progress-track {
   height: 8px;
   border-radius: 999px;
@@ -800,9 +813,9 @@ select:focus {
 }
 
 .job-details {
-  border: 1px solid rgba(165, 186, 220, 0.5);
+  border: 1px solid rgba(164, 184, 218, 0.42);
   border-radius: 12px;
-  background: rgba(246, 250, 255, 0.82);
+  background: rgba(245, 250, 255, 0.88);
   padding: 0;
 }
 
@@ -939,7 +952,7 @@ select:focus {
   }
 
   .jobs-list {
-    max-height: 520px;
+    max-height: 540px;
   }
 
   .masthead {
@@ -958,7 +971,7 @@ select:focus {
 
 @media (max-width: 720px) {
   .shell {
-    border-radius: 20px;
+    border-radius: 24px;
     padding: 14px;
   }
 
@@ -985,6 +998,11 @@ select:focus {
 
   .jobs-list {
     max-height: 480px;
+  }
+
+  .progress-submeta {
+    flex-direction: column;
+    gap: 2px;
   }
 }
 
