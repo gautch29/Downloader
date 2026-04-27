@@ -1,4 +1,5 @@
 from datetime import datetime
+from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -17,18 +18,19 @@ class TokenResponse(BaseModel):
 
 
 class DownloadCreateRequest(BaseModel):
-    url: str = Field(min_length=10, max_length=2048)
+    url: str = Field(min_length=10, max_length=8192)
     target_dir: str | None = Field(default=None, min_length=1, max_length=4096)
 
     @field_validator("url")
     @classmethod
-    def validate_1fichier_url(cls, value: str) -> str:
-        allowed_hosts = ("1fichier.com", "www.1fichier.com")
-        if not any(host in value for host in allowed_hosts):
-            raise ValueError("Only 1fichier links are allowed")
-        if not value.startswith("https://"):
-            raise ValueError("Only HTTPS links are allowed")
-        return value
+    def validate_download_url(cls, value: str) -> str:
+        trimmed = value.strip()
+        parsed = urlparse(trimmed)
+        if parsed.scheme != "https":
+            raise ValueError("Only HTTPS download links are allowed")
+        if not parsed.hostname:
+            raise ValueError("Download link must include a host")
+        return trimmed
 
 
 class DownloadResponse(BaseModel):

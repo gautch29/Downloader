@@ -1,6 +1,6 @@
-# Downloader (1fichier -> Plex)
+# Downloader (Direct/1fichier -> Plex)
 
-Self-hosted app to remotely submit 1fichier movie links, download files into a Plex-visible folder, and trigger Plex library refresh.
+Self-hosted app to remotely submit direct HTTPS or 1fichier movie links, download files into a Plex-visible folder, and trigger Plex library refresh.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ Self-hosted app to remotely submit 1fichier movie links, download files into a P
 - Access-key login mode (recommended) with Argon2 hash
 - JWT-protected API endpoints
 - Login brute-force throttling per IP (`MAX_LOGIN_ATTEMPTS_PER_15M`)
-- 1fichier-only URL validation
+- Direct and public 1fichier source handling
 - HTTPS-only source URLs
 - Per-IP rate limit for queueing jobs
 - Safe filename sanitization and duplicate-safe output names
@@ -44,7 +44,7 @@ python3 -c "from passlib.context import CryptContext; print(CryptContext(schemes
 - `PLEX_BASE_URL`
 - `PLEX_TOKEN`
 - optional: `PLEX_LIBRARY_SECTION_ID`
-- optional: `ONEFICHIER_API_KEY`
+- optional: `ONEFICHIER_API_KEY` for public 1fichier links
 - optional: `DOWNLOAD_PRESETS`
 - optional: `BROWSE_ROOTS`
 
@@ -70,9 +70,13 @@ docker compose up -d --build
 7. Open UI at `http://YOUR_CT_IP:8080`
 8. API is proxied at same origin (`/api`) via frontend nginx. Backend port is internal-only by default.
 
+## Download links
+
+Direct HTTPS links are streamed as-is. The backend follows redirects, uses `Content-Disposition` when available for the output filename, falls back to the final URL path, and updates progress from `Content-Length` when the server provides it.
+
 ## Notes on 1fichier API
 
-The backend resolves links through the 1fichier API (premium flow required) using:
+Public `https://1fichier.com/?...` links are still resolved through the 1fichier API (premium flow required) using:
 
 - `POST {ONEFICHIER_API_BASE}/v1/download/get_token.cgi`
 - `POST {ONEFICHIER_API_BASE}/v1/file/info.cgi`

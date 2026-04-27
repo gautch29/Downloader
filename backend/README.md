@@ -26,6 +26,11 @@ uvicorn app.main:app --reload --port 8000
 - `DOWNLOAD_READ_TIMEOUT_SECONDS`: read timeout to detect stalled downloads
 - `DOWNLOAD_RETRY_COUNT`: retries after transient stream timeout/errors
 
+## Download sources
+
+- Direct HTTPS links are downloaded without 1fichier API resolution.
+- Public `https://1fichier.com/?...` links require `ONEFICHIER_API_KEY` and are resolved through the 1fichier API before streaming.
+
 ## Access key hash helper (Argon2)
 
 ```bash

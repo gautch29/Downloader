@@ -493,7 +493,9 @@ export function App() {
           <div className="masthead-copy">
             <p className="eyebrow">Private Pipeline</p>
             <h1>Movie Drop Console</h1>
-            <p className="lead">Queue secure 1fichier downloads, route them to the right library folder, and monitor progress live.</p>
+            <p className="lead">
+              Queue secure direct or 1fichier downloads, route them to the right library folder, and monitor progress live.
+            </p>
           </div>
 
           {isAuthed && (
@@ -576,7 +578,9 @@ export function App() {
               <form className="panel composer-panel" onSubmit={submitDownload}>
                 <header className="panel-head">
                   <h2>New Download</h2>
-                  <p className="panel-sub">Paste a 1fichier link and choose exactly where the file should land.</p>
+                  <p className="panel-sub">
+                    Paste a direct HTTPS link or a 1fichier link and choose exactly where the file should land.
+                  </p>
                 </header>
 
                 <div className="active-destination">
@@ -585,10 +589,10 @@ export function App() {
                 </div>
 
                 <label className="field">
-                  <span>1fichier link</span>
+                  <span>Download link</span>
                   <input
                     type="url"
-                    placeholder="https://1fichier.com/?..."
+                    placeholder="https://example.com/file.mkv"
                     value={url}
                     onChange={(event) => setUrl(event.target.value)}
                     required
@@ -740,6 +744,7 @@ export function App() {
                       job.status === 'running' && remainingBytes !== null && speedBps && speedBps > 0
                         ? remainingBytes / speedBps
                         : null;
+                    const isStreaming = job.status === 'running' && !job.total_bytes;
 
                     return (
                       <article key={job.id} className={`job-card status-${job.status}`}>
@@ -765,10 +770,12 @@ export function App() {
                               {job.total_bytes ? ` / ${formatBytes(job.total_bytes)}` : ''}
                             </span>
                           </div>
-                          <div className={`progress-track status-${job.status}`}>
+                          <div className={`progress-track status-${job.status}${isStreaming ? ' is-streaming' : ''}`}>
                             <div
                               className="progress-value"
-                              style={{ width: `${Math.min(100, Math.max(0, job.progress_percent || 0))}%` }}
+                              style={{
+                                width: isStreaming ? '38%' : `${Math.min(100, Math.max(0, job.progress_percent || 0))}%`
+                              }}
                             />
                           </div>
                           <div className="progress-submeta">

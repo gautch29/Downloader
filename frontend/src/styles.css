@@ -788,6 +788,10 @@ select:focus {
   transition: width 260ms ease;
 }
 
+.progress-track.is-streaming .progress-value {
+  animation: streamingProgress 1.35s ease-in-out infinite;
+}
+
 .progress-track.status-success .progress-value {
   background: linear-gradient(90deg, #79d3ba 0%, #4ab696 100%);
 }
@@ -918,6 +922,15 @@ select:focus {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes streamingProgress {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(280%);
   }
 }
 

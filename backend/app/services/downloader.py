@@ -30,6 +30,12 @@ class DownloadInterrupted(Exception):
     total_bytes: int | None
 
 
+def is_onefichier_public_url(source_url: str) -> bool:
+    parsed = urlparse(source_url.strip())
+    hostname = (parsed.hostname or "").lower()
+    return hostname in {"1fichier.com", "www.1fichier.com"} and bool(parsed.query)
+
+
 class OneFichierClient:
     def __init__(self, api_key: str | None, api_base: str) -> None:
         self.api_key = api_key
@@ -146,7 +152,7 @@ class OneFichierClient:
 
     def _canonical_public_url(self, source_url: str) -> str | None:
         parsed = urlparse(source_url)
-        if "1fichier.com" not in parsed.netloc.lower():
+        if not is_onefichier_public_url(source_url):
             return None
         if not parsed.query:
             return None
@@ -190,6 +196,7 @@ class FileDownloader:
         read_timeout_seconds: int = 90,
         retry_count: int = 2,
         progress_callback=None,
+        metadata_callback=None,
         control_signal_callback=None,
     ) -> DownloadResult:
         timeout = httpx.Timeout(connect=connect_timeout_seconds, read=read_timeout_seconds, write=60, pool=30)
@@ -216,6 +223,8 @@ class FileDownloader:
 
                         safe_name = self._sanitize_filename(file_name or "download.bin")
                         target_path = self._deduplicate_target(destination_dir / safe_name)
+                        if metadata_callback:
+                            await metadata_callback(target_path.name, total_bytes)
 
                         bytes_downloaded = 0
                         last_callback_at = asyncio.get_event_loop().time()
@@ -258,7 +267,7 @@ class FileDownloader:
                                 prefix = handle.read(256).lower()
                             if b"<html" in prefix or b"1fichier" in prefix:
                                 target_path.unlink(missing_ok=True)
-                                raise RuntimeError("1fichier returned an HTML page instead of a file")
+                                raise RuntimeError("Download URL returned an HTML page instead of a file")
 
                         return DownloadResult(
                             path=target_path,

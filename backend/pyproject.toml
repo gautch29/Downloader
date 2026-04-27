@@ -1,7 +1,7 @@
 [project]
 name = "plex-downloader-backend"
 version = "0.1.0"
-description = "Secure 1fichier-to-Plex downloader"
+description = "Secure direct/1fichier-to-Plex downloader"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",

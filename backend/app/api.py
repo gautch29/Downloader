@@ -26,7 +26,13 @@ from app.schemas import (
     TokenResponse,
 )
 from app.security import enforce_login_rate_limit, enforce_rate_limit, require_admin
-from app.services.downloader import DownloadInterrupted, FileDownloader, OneFichierClient
+from app.services.downloader import (
+    DownloadInterrupted,
+    FileDownloader,
+    OneFichierClient,
+    ResolvedDownload,
+    is_onefichier_public_url,
+)
 from app.services.joblog import append_job_event
 from app.services.plex import PlexClient
 
@@ -413,10 +419,19 @@ async def process_download_job(job_id: str) -> None:
 
             try:
                 target_dir = _resolve_target_dir(job.target_dir)
-                resolved = await onefichier.resolve_download(job.source_url)
+                if is_onefichier_public_url(job.source_url):
+                    resolved = await onefichier.resolve_download(job.source_url)
+                else:
+                    resolved = ResolvedDownload(url=job.source_url)
                 job.file_name = resolved.filename
                 job.total_bytes = resolved.expected_size
                 await db.commit()
+
+                async def on_metadata(file_name: str, total: int | None) -> None:
+                    job.file_name = file_name
+                    if total is not None:
+                        job.total_bytes = total
+                    await db.commit()
 
                 async def on_progress(downloaded: int, total: int | None) -> None:
                     job.bytes_downloaded = downloaded
@@ -445,6 +460,7 @@ async def process_download_job(job_id: str) -> None:
                     read_timeout_seconds=settings.download_read_timeout_seconds,
                     retry_count=settings.download_retry_count,
                     progress_callback=on_progress,
+                    metadata_callback=on_metadata,
                     control_signal_callback=get_control_signal,
                 )
 
